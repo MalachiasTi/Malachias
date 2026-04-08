@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { City, Role, UserSession } from './types';
 import { CITIES, ROLES } from './constants';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Toaster } from '@/components/ui/sonner';
+import { Button } from './components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
+import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 import { Building2, UserCircle2, ShieldCheck, LogOut, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
