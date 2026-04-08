@@ -75,25 +75,34 @@ export default function App() {
               <CardTitle className="text-2xl font-bold text-gray-900">Malachias AutoPendencias</CardTitle>
               <CardDescription>Selecione sua unidade e modo de acesso</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Cidade</label>
+            <CardContent className="space-y-6 flex flex-col items-center">
+              <div className="space-y-2 w-full text-center">
+                <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Cidade</label>
                 <Select value={selectedCity} onValueChange={(v) => setSelectedCity(v as City)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full justify-center text-center">
                     <SelectValue placeholder="Selecione a cidade" />
                   </SelectTrigger>
                   <SelectContent>
                     {CITIES.map(city => (
-                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                      <SelectItem 
+                        key={city} 
+                        value={city}
+                        className={`${CITY_COLORS[city].text} font-bold focus:bg-gray-100`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${CITY_COLORS[city].primary}`} />
+                          {city}
+                        </div>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Modo de Acesso</label>
+              <div className="space-y-2 w-full text-center">
+                <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Modo de Acesso</label>
                 <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as Role)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full justify-center text-center">
                     <SelectValue placeholder="Selecione o modo" />
                   </SelectTrigger>
                   <SelectContent>
@@ -106,7 +115,7 @@ export default function App() {
             </CardContent>
             <CardFooter>
               <Button 
-                className="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-6"
+                className={`w-full ${selectedCity ? CITY_COLORS[selectedCity as City].primary : 'bg-blue-700'} hover:opacity-90 text-white font-bold py-6 transition-colors duration-300`}
                 onClick={handleLogin}
               >
                 Entrar no Sistema
