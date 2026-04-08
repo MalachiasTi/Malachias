@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Represents a parts order between branches.",
+      "type": "object",
+      "properties": {
+        "orderNumber": { "type": "string", "description": "Unique order identifier" },
+        "originCity": { "type": "string", "description": "City requesting the parts" },
+        "destinationCity": { "type": "string", "description": "City providing the parts" },
+        "status": { "type": "string", "enum": ["Aguardando separação", "Em separação", "Divergência", "Concluído"] },
+        "priority": { "type": "string", "enum": ["Baixa", "Normal", "Urgente"] },
+        "observations": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string" },
+              "timestamp": { "type": "number" },
+              "user": { "type": "string" },
+              "note": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["orderNumber", "originCity", "destinationCity", "status", "priority", "createdAt", "updatedAt"]
+    },
+    "AppNotification": {
+      "title": "AppNotification",
+      "description": "Represents a system notification for order events.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["order_created", "status_changed", "note_added"] },
+        "orderId": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "fromCity": { "type": "string" },
+        "toCity": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "readBy": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["type", "orderId", "orderNumber", "fromCity", "toCity", "message", "timestamp", "readBy"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of all orders."
+    },
+    "/notifications/{notificationId}": {
+      "schema": "AppNotification",
+      "description": "Collection of all system notifications."
+    }
+  }
+}

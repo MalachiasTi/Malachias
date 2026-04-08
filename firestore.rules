@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: orders
+    // Document ID: auto-generated
+    // Fields:
+    //   - orderNumber: string (required)
+    //   - originCity: string (required)
+    //   - destinationCity: string (required)
+    //   - status: string (required, enum)
+    //   - priority: string (required, enum)
+    //   - observations: string (optional)
+    //   - createdAt: number (required)
+    //   - updatedAt: number (required)
+    //   - history: list (optional)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return true; // Simplified for this app as it doesn't use Firebase Auth yet
+    }
+
+    function isValidOrder(data) {
+      return data.orderNumber is string && data.orderNumber.size() > 0 && data.orderNumber.size() < 50 &&
+             data.originCity is string &&
+             data.destinationCity is string &&
+             data.status in ['Aguardando separação', 'Em separação', 'Divergência', 'Concluído'] &&
+             data.priority in ['Baixa', 'Normal', 'Urgente'] &&
+             data.createdAt is number &&
+             data.updatedAt is number;
+    }
+
+    match /orders/{orderId} {
+      allow read: if true;
+      allow create: if isValidOrder(request.resource.data);
+      allow update: if isValidOrder(request.resource.data);
+      allow delete: if false; // Only admin can delete, but we'll handle that via a special flag or just disable for now
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if true;
+      allow create: if true; // In a real app, validate schema
+      allow update: if true; // Allow marking as read
+      allow delete: if false;
+    }
+
+    // Admin special rule for clearing day
+    match /admin_actions/clear_day {
+      allow write: if true; // In a real app, this would be restricted to admin UID
+    }
+  }
+}
