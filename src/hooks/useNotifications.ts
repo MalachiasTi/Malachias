@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, updateDoc, doc, orderBy, limit, arrayUnion, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, updateDoc, doc, orderBy, limit, arrayUnion, where, writeBatch, getDocs } from 'firebase/firestore';
 import { AppNotification, City } from '../types';
 import { toast } from 'sonner';
 
@@ -24,8 +24,8 @@ export function useNotifications(currentCity: City | 'Geral') {
       snapshot.forEach((doc) => {
         const data = doc.data() as AppNotification;
         const isRelevant = currentCity === 'Geral' || 
-                          data.fromCity === currentCity || 
-                          data.toCity === currentCity;
+                          ((data.fromCity === currentCity || data.toCity === currentCity) && 
+                           data.createdBy !== currentCity);
         
         if (isRelevant) {
           notifs.push({ ...data, id: doc.id });
@@ -63,5 +63,22 @@ export function useNotifications(currentCity: City | 'Geral') {
     }
   };
 
-  return { notifications, unreadCount, markAsRead, markAllAsRead };
+  const clearNotifications = async () => {
+    try {
+      const batch = writeBatch(db);
+      // We only clear the ones currently visible in the panel for safety, 
+      // or we could query all relevant ones. Let's clear the ones in state.
+      notifications.forEach((n) => {
+        const ref = doc(db, 'notifications', n.id);
+        batch.delete(ref);
+      });
+      await batch.commit();
+      toast.success("Histórico de notificações limpo.");
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+      toast.error("Erro ao limpar notificações.");
+    }
+  };
+
+  return { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications };
 }

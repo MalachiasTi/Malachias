@@ -13,7 +13,11 @@ import {
   CheckCircle2, 
   Clock, 
   FileSpreadsheet,
-  TrendingUp
+  TrendingUp,
+  Settings,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { STATUS_COLORS, CITIES } from '../constants';
 import { toast } from 'sonner';
@@ -21,13 +25,27 @@ import * as XLSX from 'xlsx';
 
 import { useOrders } from '../hooks/useOrders';
 import { useNotifications } from '../hooks/useNotifications';
+import { useAdminSettings } from '../hooks/useAdminSettings';
 import OrderDetails from './OrderDetails';
 import NotificationPanel from './NotificationPanel';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
 
 export default function AdminView() {
   const { orders, updateOrderStatus, clearDailyOrders } = useOrders();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications('Geral');
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications('Geral');
+  const { adminPassword, updatePassword } = useAdminSettings();
+  
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [filter, setFilter] = useState<'all' | 'completed' | 'pending' | 'divergence'>('all');
+  
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [clearPasswordInput, setClearPasswordInput] = useState('');
 
   const stats = {
     total: orders.length,
@@ -35,6 +53,14 @@ export default function AdminView() {
     pending: orders.filter(o => o.status === 'Aguardando separação' || o.status === 'Em separação').length,
     divergence: orders.filter(o => o.status === 'Divergência').length
   };
+
+  const filteredOrders = orders.filter(o => {
+    if (filter === 'all') return true;
+    if (filter === 'completed') return o.status === 'Concluído';
+    if (filter === 'pending') return o.status === 'Aguardando separação' || o.status === 'Em separação';
+    if (filter === 'divergence') return o.status === 'Divergência';
+    return true;
+  });
 
   const handleExportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(orders.map(o => ({
@@ -53,9 +79,24 @@ export default function AdminView() {
   };
 
   const handleDeleteDaily = async () => {
-    if (confirm('ATENÇÃO: Esta ação apagará todas as operações do dia e é irreversível. Confirmar?')) {
-      await clearDailyOrders();
+    if (clearPasswordInput !== adminPassword) {
+      toast.error('Senha de administrador incorreta.');
+      return;
     }
+    
+    await clearDailyOrders();
+    setIsClearConfirmOpen(false);
+    setClearPasswordInput('');
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 4) {
+      toast.error('A senha deve ter pelo menos 4 caracteres.');
+      return;
+    }
+    await updatePassword(newPassword);
+    setNewPassword('');
+    setIsSettingsOpen(false);
   };
 
   const handleUpdateOrder = async (orderId: string, status: OrderStatus, note: string) => {
@@ -63,108 +104,229 @@ export default function AdminView() {
     setSelectedOrder(null);
   };
 
+  const handleSelectOrderFromNotification = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      setSelectedOrder(order);
+    } else {
+      toast.error("Pedido não encontrado ou já foi removido.");
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-blue-600">Total de Pedidos</p>
-                <h3 className="text-3xl font-bold text-blue-900">{stats.total}</h3>
+      <div className="bg-white p-5 rounded-xl border-2 border-blue-100 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card 
+            className={`bg-white border-slate-200 shadow-none cursor-pointer transition-all hover:border-blue-400 ${filter === 'all' ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            <CardContent className="pt-5">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs font-bold text-blue-600 mb-1 uppercase tracking-wider">Total de Pedidos</p>
+                  <h3 className="text-2xl font-bold text-slate-900">{stats.total}</h3>
+                </div>
+                <div className="bg-blue-50 p-2 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-blue-500" />
+                </div>
               </div>
-              <TrendingUp className="w-8 h-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-green-600">Concluídos</p>
-                <h3 className="text-3xl font-bold text-green-900">{stats.completed}</h3>
+            </CardContent>
+          </Card>
+          
+          <Card 
+            className={`bg-green-50/30 border-green-100 shadow-none cursor-pointer transition-all hover:border-green-400 ${filter === 'completed' ? 'ring-2 ring-green-500 border-transparent' : ''}`}
+            onClick={() => setFilter('completed')}
+          >
+            <CardContent className="pt-5">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs font-bold text-green-600 mb-1 uppercase tracking-wider">Concluídos</p>
+                  <h3 className="text-2xl font-bold text-slate-900">{stats.completed}</h3>
+                </div>
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                </div>
               </div>
-              <CheckCircle2 className="w-8 h-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-yellow-50 border-yellow-200">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-yellow-600">Pendentes</p>
-                <h3 className="text-3xl font-bold text-yellow-900">{stats.pending}</h3>
+          <Card 
+            className={`bg-yellow-50/30 border-yellow-100 shadow-none cursor-pointer transition-all hover:border-yellow-400 ${filter === 'pending' ? 'ring-2 ring-yellow-500 border-transparent' : ''}`}
+            onClick={() => setFilter('pending')}
+          >
+            <CardContent className="pt-5">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs font-bold text-yellow-600 mb-1 uppercase tracking-wider">Pendentes</p>
+                  <h3 className="text-2xl font-bold text-slate-900">{stats.pending}</h3>
+                </div>
+                <div className="bg-yellow-100 p-2 rounded-lg">
+                  <Clock className="w-6 h-6 text-yellow-600" />
+                </div>
               </div>
-              <Clock className="w-8 h-8 text-yellow-400" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-red-600">Divergências</p>
-                <h3 className="text-3xl font-bold text-red-900">{stats.divergence}</h3>
+          <Card 
+            className={`bg-red-50/30 border-red-100 shadow-none cursor-pointer transition-all hover:border-red-400 ${filter === 'divergence' ? 'ring-2 ring-red-500 border-transparent' : ''}`}
+            onClick={() => setFilter('divergence')}
+          >
+            <CardContent className="pt-5">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs font-bold text-red-600 mb-1 uppercase tracking-wider">Divergências</p>
+                  <h3 className="text-2xl font-bold text-slate-900">{stats.divergence}</h3>
+                </div>
+                <div className="bg-red-100 p-2 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
               </div>
-              <AlertTriangle className="w-8 h-8 text-red-400" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3 space-y-6">
           <div className="flex flex-wrap gap-4 justify-between items-center">
-            <h2 className="text-xl font-bold text-gray-900">Histórico Geral de Operações</h2>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleExportExcel} className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              Histórico Geral de Operações 
+              {filter !== 'all' && (
+                <span className="ml-2 text-sm font-medium text-slate-400">
+                  (Filtrado: {filter === 'completed' ? 'Concluídos' : filter === 'pending' ? 'Pendentes' : 'Divergências'})
+                </span>
+              )}
+            </h2>
+            <div className="flex gap-3">
+              <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2 font-bold border-slate-300">
+                    <Settings className="w-4 h-4" />
+                    Configurações
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Lock className="w-5 h-5 text-blue-600" />
+                      Alterar Senha ADM
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">Nova Senha</Label>
+                      <div className="relative">
+                        <Input
+                          id="new-password"
+                          type={showPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Digite a nova senha"
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4 text-slate-400" /> : <Eye className="h-4 w-4 text-slate-400" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleChangePassword} className="bg-blue-700 hover:bg-blue-800">
+                      Salvar Nova Senha
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Button variant="outline" onClick={handleExportExcel} className="flex items-center gap-2 font-bold border-slate-300">
                 <FileSpreadsheet className="w-4 h-4" />
                 Exportar Excel
               </Button>
-              <Button variant="destructive" onClick={handleDeleteDaily} className="flex items-center gap-2">
-                <Trash2 className="w-4 h-4" />
-                Limpar Dia
-              </Button>
+
+              <Dialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center gap-2 font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Limpar Dia
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-red-600 flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      Confirmar Limpeza Total
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    <p className="text-sm text-slate-600">
+                      Esta ação apagará <strong>TODOS</strong> os pedidos e notificações do sistema. Esta operação é irreversível.
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="clear-password">Senha de Administrador</Label>
+                      <Input
+                        id="clear-password"
+                        type="password"
+                        value={clearPasswordInput}
+                        onChange={(e) => setClearPasswordInput(e.target.value)}
+                        placeholder="Digite a senha para confirmar"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsClearConfirmOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleDeleteDaily} className="bg-red-600 hover:bg-red-700">
+                      Confirmar Exclusão
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
-          <Card>
+          <Card className="border-none shadow-xl overflow-hidden">
             <CardContent className="p-0">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Pedido</TableHead>
-                    <TableHead>Origem</TableHead>
-                    <TableHead>Destino</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Prioridade</TableHead>
-                    <TableHead>Ações</TableHead>
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-bold text-slate-900 py-4">Pedido</TableHead>
+                    <TableHead className="font-bold text-slate-900 py-4">Origem</TableHead>
+                    <TableHead className="font-bold text-slate-900 py-4">Destino</TableHead>
+                    <TableHead className="font-bold text-slate-900 py-4">Status</TableHead>
+                    <TableHead className="font-bold text-slate-900 py-4">Prioridade</TableHead>
+                    <TableHead className="font-bold text-slate-900 py-4">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map(order => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-bold">#{order.orderNumber}</TableCell>
-                      <TableCell>{order.originCity}</TableCell>
-                      <TableCell>{order.destinationCity}</TableCell>
+                  {filteredOrders.map(order => (
+                    <TableRow key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                      <TableCell className="font-bold text-slate-900">#{order.orderNumber}</TableCell>
+                      <TableCell className="font-medium text-slate-600">{order.originCity}</TableCell>
+                      <TableCell className="font-medium text-slate-600">{order.destinationCity}</TableCell>
                       <TableCell>
-                        <Badge className={`${STATUS_COLORS[order.status]} text-white`}>
+                        <Badge className={`${STATUS_COLORS[order.status]} text-white border-0 px-2 py-0.5 rounded-lg font-bold shadow-sm text-[10px]`}>
                           {order.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium text-slate-600 text-xs">
                         <div className="flex items-center gap-2">
                           {order.priority}
                           {order.status !== 'Concluído' && (Date.now() - order.updatedAt > 14400000) && (
-                            <Badge variant="destructive" className="animate-pulse text-[10px] px-1 h-4">ATRASADO</Badge>
+                            <Badge variant="destructive" className="animate-pulse text-[9px] px-1 h-3.5">ATRASADO</Badge>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)}>Ver</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="font-bold text-slate-600 hover:text-blue-700 h-8 px-2 text-xs">Ver</Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -181,6 +343,8 @@ export default function AdminView() {
             currentCity="Geral"
             onMarkAsRead={markAsRead}
             onMarkAllAsRead={markAllAsRead}
+            onClearAll={clearNotifications}
+            onSelectOrder={handleSelectOrderFromNotification}
           />
         </div>
       </div>

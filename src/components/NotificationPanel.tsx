@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
-import { Bell, BellOff, CheckCheck, Clock } from 'lucide-react';
+import { Bell, BellOff, CheckCheck, Clock, ArrowRight, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'motion/react';
+import { CITY_COLORS } from '../constants';
 
 interface NotificationPanelProps {
   notifications: AppNotification[];
@@ -16,6 +17,8 @@ interface NotificationPanelProps {
   currentCity: City | 'Geral';
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: () => void;
+  onClearAll: () => void;
+  onSelectOrder: (orderId: string) => void;
 }
 
 export default function NotificationPanel({ 
@@ -23,72 +26,109 @@ export default function NotificationPanel({
   unreadCount, 
   currentCity,
   onMarkAsRead,
-  onMarkAllAsRead
+  onMarkAllAsRead,
+  onClearAll,
+  onSelectOrder
 }: NotificationPanelProps) {
   return (
-    <Card className="h-full flex flex-col shadow-lg border-blue-100">
-      <CardHeader className="flex flex-row items-center justify-between py-4 space-y-0">
-        <CardTitle className="text-lg font-bold flex items-center gap-2">
-          <Bell className="w-5 h-5 text-blue-700" />
-          Notificações
-          {unreadCount > 0 && (
-            <Badge variant="destructive" className="ml-1 px-2 py-0.5 text-[10px] animate-pulse">
-              {unreadCount}
-            </Badge>
-          )}
-        </CardTitle>
-        {unreadCount > 0 && (
+    <Card className="h-full flex flex-col shadow-xl border-slate-200 rounded-xl overflow-hidden max-h-[calc(100vh-250px)]">
+      <CardHeader className="pb-3 border-b bg-slate-50/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 p-1.5 rounded-lg">
+              <Bell className="w-4 h-4 text-blue-700" />
+            </div>
+            <CardTitle className="text-base font-bold text-slate-900">Notificações</CardTitle>
+            {unreadCount > 0 && (
+              <Badge className="bg-red-500 text-white border-0 font-bold px-1.5 h-5 min-w-[20px] flex items-center justify-center rounded-full text-[10px]">
+                {unreadCount}
+              </Badge>
+            )}
+          </div>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={onMarkAllAsRead}
-            className="text-xs text-blue-600 hover:text-blue-800 h-8 px-2"
+            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-bold text-[10px] h-7 px-2"
           >
             <CheckCheck className="w-3 h-3 mr-1" />
             Ler tudo
           </Button>
-        )}
+        </div>
       </CardHeader>
-      <CardContent className="flex-1 p-0 overflow-hidden">
-        <ScrollArea className="h-[400px] px-4">
-          <div className="space-y-3 py-4">
-            <AnimatePresence initial={false}>
+      <CardContent className="flex-1 p-0 flex flex-col overflow-hidden">
+        <ScrollArea className="flex-1">
+          <div className="p-3 space-y-3">
+            <AnimatePresence mode="popLayout">
               {notifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                  <BellOff className="w-8 h-8 mb-2 opacity-20" />
-                  <p className="text-sm italic">Nenhuma notificação</p>
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col items-center justify-center py-10 text-slate-400"
+                >
+                  <BellOff className="w-10 h-10 mb-2 opacity-20" />
+                  <p className="text-xs font-bold">Sem notificações</p>
+                </motion.div>
               ) : (
                 notifications.map((n) => (
                   <motion.div
                     key={n.id}
+                    layout
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className={`p-3 rounded-lg border text-sm transition-all ${
+                    className={`p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm active:scale-[0.98] ${
                       n.readBy.includes(currentCity) 
-                        ? 'bg-white border-gray-100 opacity-70' 
-                        : 'bg-blue-50 border-blue-100 shadow-sm'
+                        ? 'bg-white border-slate-100 opacity-60' 
+                        : 'bg-white border-blue-50 shadow-sm ring-1 ring-blue-50/50'
                     }`}
-                    onClick={() => !n.readBy.includes(currentCity) && onMarkAsRead(n.id)}
+                    onClick={() => {
+                      if (!n.readBy.includes(currentCity)) onMarkAsRead(n.id);
+                      onSelectOrder(n.orderId);
+                    }}
                   >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className={`font-bold ${n.readBy.includes(currentCity) ? 'text-gray-700' : 'text-blue-900'}`}>
-                        {n.type === 'order_created' ? '🆕 Novo Pedido' : '🔄 Atualização'}
-                      </span>
-                      <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {format(n.timestamp, "HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
-                    <p className="text-gray-600 leading-tight mb-2">{n.message}</p>
-                    <div className="flex justify-between items-center">
-                      <Badge variant="outline" className="text-[9px] h-4 px-1 uppercase tracking-tighter">
-                        #{n.orderNumber}
-                      </Badge>
-                      {!n.readBy.includes(currentCity) && (
-                        <div className="w-2 h-2 rounded-full bg-blue-600" />
-                      )}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Badge className={`${CITY_COLORS[n.fromCity].primary} text-white border-0 px-1.5 py-0 text-[9px] font-bold uppercase`}>
+                            {n.fromCity}
+                          </Badge>
+                          <ArrowRight className="w-2.5 h-2.5 text-slate-400" />
+                          <Badge className={`${CITY_COLORS[n.toCity].primary} text-white border-0 px-1.5 py-0 text-[9px] font-bold uppercase`}>
+                            {n.toCity}
+                          </Badge>
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-400">
+                          #{n.orderNumber}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <div className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+                          n.type === 'order_created' ? 'bg-blue-100' : 'bg-slate-100'
+                        }`}>
+                          {n.type === 'order_created' ? (
+                            <div className="bg-blue-600 w-4 h-4 rounded flex items-center justify-center">
+                              <span className="text-[7px] text-white font-bold">NEW</span>
+                            </div>
+                          ) : (
+                            <Clock className="w-3 h-3 text-slate-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start mb-0.5">
+                            <span className="font-bold text-slate-900 text-xs truncate">
+                              {n.type === 'order_created' ? 'Novo Pedido' : 'Atualização'}
+                            </span>
+                            <span className="text-[9px] font-medium text-slate-400 flex items-center gap-1 shrink-0 ml-2">
+                              {format(n.timestamp, 'HH:mm', { locale: ptBR })}
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-medium text-slate-600 leading-snug line-clamp-2">
+                            {n.message}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 ))
@@ -96,6 +136,19 @@ export default function NotificationPanel({
             </AnimatePresence>
           </div>
         </ScrollArea>
+        {notifications.length > 0 && (
+          <div className="p-3 border-t bg-gray-50/50">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClearAll}
+              className="w-full text-xs text-gray-500 hover:text-red-600 h-9 flex items-center justify-center gap-2"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Limpar histórico
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

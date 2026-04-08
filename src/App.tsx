@@ -7,18 +7,29 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
-import { Building2, UserCircle2, ShieldCheck, LogOut, Bell } from 'lucide-react';
+import { Building2, UserCircle2, ShieldCheck, LogOut, Bell, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Input } from './components/ui/input';
 
 import EstoquistaView from './components/EstoquistaView';
 import AdminView from './components/AdminView';
 import { CITY_COLORS } from './constants';
+import { useAdminSettings } from './hooks/useAdminSettings';
 
 export default function App() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [selectedCity, setSelectedCity] = useState<City | ''>('');
   const [selectedRole, setSelectedRole] = useState<Role | ''>('');
   const [isAdminConfirming, setIsAdminConfirming] = useState(false);
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const { adminPassword } = useAdminSettings();
+
+  useEffect(() => {
+    if (selectedRole === 'Administrador' && selectedCity !== 'Pirassununga' && selectedCity !== '') {
+      setSelectedRole('');
+      toast.info('O modo Administrador foi desativado pois não está disponível para esta cidade.');
+    }
+  }, [selectedCity, selectedRole]);
 
   const cityColor = session ? CITY_COLORS[session.city] : null;
 
@@ -29,6 +40,10 @@ export default function App() {
     }
 
     if (selectedRole === 'Administrador') {
+      if (selectedCity !== 'Pirassununga') {
+        toast.error('O modo Administrador só está disponível para Pirassununga.');
+        return;
+      }
       setIsAdminConfirming(true);
       return;
     }
@@ -42,12 +57,18 @@ export default function App() {
   };
 
   const confirmAdmin = () => {
+    if (adminPasswordInput !== adminPassword) {
+      toast.error('Senha de administrador incorreta.');
+      return;
+    }
+
     setSession({
       city: selectedCity as City,
       role: 'Administrador',
       isAdmin: true
     });
     setIsAdminConfirming(false);
+    setAdminPasswordInput('');
     toast.success('Modo Administrador ativado.');
   };
 
@@ -106,9 +127,12 @@ export default function App() {
                     <SelectValue placeholder="Selecione o modo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROLES.map(role => (
-                      <SelectItem key={role} value={role}>{role}</SelectItem>
-                    ))}
+                    {ROLES.map(role => {
+                      if (role === 'Administrador' && selectedCity !== 'Pirassununga') {
+                        return null;
+                      }
+                      return <SelectItem key={role} value={role}>{role}</SelectItem>;
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -135,17 +159,34 @@ export default function App() {
               >
                 <div className="flex items-center gap-3 mb-4 text-orange-600">
                   <ShieldCheck className="w-6 h-6" />
-                  <h3 className="text-lg font-bold">Confirmação de Administrador</h3>
+                  <h3 className="text-lg font-bold">Acesso Administrador</h3>
                 </div>
-                <p className="text-gray-600 mb-6">
-                  Você está tentando acessar o modo administrador. Deseja continuar?
+                <p className="text-sm text-gray-600 mb-4">
+                  Digite a senha de administrador para continuar:
                 </p>
+                <div className="space-y-4 mb-6">
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input 
+                      type="password" 
+                      placeholder="Senha ADM" 
+                      className="pl-10"
+                      value={adminPasswordInput}
+                      onChange={(e) => setAdminPasswordInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && confirmAdmin()}
+                      autoFocus
+                    />
+                  </div>
+                </div>
                 <div className="flex gap-3">
-                  <Button variant="outline" className="flex-1" onClick={() => setIsAdminConfirming(false)}>
+                  <Button variant="outline" className="flex-1" onClick={() => {
+                    setIsAdminConfirming(false);
+                    setAdminPasswordInput('');
+                  }}>
                     Cancelar
                   </Button>
                   <Button className="flex-1 bg-orange-600 hover:bg-orange-700" onClick={confirmAdmin}>
-                    Confirmar
+                    Entrar
                   </Button>
                 </div>
               </motion.div>
@@ -161,20 +202,21 @@ export default function App() {
       <Toaster position="top-right" />
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-6 h-6 text-blue-700" />
-              <span className="font-bold text-xl text-gray-900 hidden sm:inline">Malachias AutoPendencias</span>
-              <span className="font-bold text-xl text-gray-900 sm:hidden">Malachias</span>
+          <div className="flex justify-between h-20 items-center">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-700 p-1.5 rounded-lg">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-bold text-xl text-slate-900 tracking-tight">Malachias AutoPendencias</span>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-5">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-gray-900">{session.city}</p>
-                <p className="text-xs text-gray-500">{session.role}</p>
+                <p className="text-sm font-bold text-slate-900 leading-none mb-1">{session.city}</p>
+                <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">{session.role}</p>
               </div>
-              <div className="h-8 w-px bg-gray-200 mx-2 hidden sm:block"></div>
-              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-gray-500 hover:text-red-600">
+              <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors w-9 h-9">
                 <LogOut className="w-5 h-5" />
               </Button>
             </div>
@@ -182,10 +224,10 @@ export default function App() {
         </div>
       </header>
       
-      <div className={`${cityColor?.primary || 'bg-blue-700'} text-white py-2 px-4 shadow-inner transition-colors duration-500`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest">
+      <div className="bg-blue-700 text-white py-2.5 px-4 shadow-md sticky top-20 z-30">
+        <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 text-[11px] font-bold uppercase tracking-[0.15em]">
           <Building2 className="w-4 h-4" />
-          Você está logado na unidade: <span className="underline decoration-2 underline-offset-4">{session.city}</span>
+          VOCÊ ESTÁ LOGADO NA UNIDADE: <span className="underline decoration-2 underline-offset-4">{session.city}</span>
         </div>
       </div>
 

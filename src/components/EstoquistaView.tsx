@@ -29,7 +29,7 @@ interface EstoquistaViewProps {
 
 export default function EstoquistaView({ currentCity, role }: EstoquistaViewProps) {
   const { orders, createOrder, updateOrderStatus } = useOrders();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(currentCity);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications(currentCity);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   
   const cityColor = CITY_COLORS[currentCity];
@@ -90,6 +90,15 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
     setComplementNote('');
     setSearchNumber('');
     setFoundOrder(null);
+  };
+
+  const handleSelectOrderFromNotification = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      setSelectedOrder(order);
+    } else {
+      toast.error("Pedido não encontrado ou já foi removido.");
+    }
   };
 
   const sentOrders = orders.filter(o => o.originCity === currentCity);
@@ -210,115 +219,110 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>Gerenciamento de Pedidos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="received">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="received" className="flex items-center gap-2">
+          <Tabs defaultValue="received" className="h-full">
+            <Card className="h-full border-none shadow-xl overflow-hidden rounded-2xl">
+              <CardHeader className="space-y-6 bg-slate-50/50 pb-6">
+                <TabsList className="grid w-full grid-cols-2 bg-slate-200/50 p-1 rounded-xl">
+                  <TabsTrigger value="received" className="flex items-center gap-2 font-bold rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm py-2.5">
                     <ArrowDownLeft className="w-4 h-4" />
                     Recebidos ({receivedOrders.length})
                   </TabsTrigger>
-                  <TabsTrigger value="sent" className="flex items-center gap-2">
+                  <TabsTrigger value="sent" className="flex items-center gap-2 font-bold rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm py-2.5">
                     <ArrowUpRight className="w-4 h-4" />
                     Enviados ({sentOrders.length})
                   </TabsTrigger>
                 </TabsList>
-
-                <TabsContent value="received">
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
+                <CardTitle className="text-xl font-bold text-slate-900 tracking-tight">Gerenciamento de Pedidos</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <TabsContent value="received" className="m-0">
+                  <Table>
+                    <TableHeader className="bg-slate-50/50">
+                      <TableRow className="hover:bg-transparent border-b">
+                        <TableHead className="font-bold text-slate-900 py-3 pl-6">Pedido</TableHead>
+                        <TableHead className="font-bold text-slate-900 py-3">Origem</TableHead>
+                        <TableHead className="font-bold text-slate-900 py-3">Prioridade</TableHead>
+                        <TableHead className="font-bold text-slate-900 py-3">Status</TableHead>
+                        <TableHead className="font-bold text-slate-900 py-3 pr-6">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {receivedOrders.length === 0 ? (
                         <TableRow>
-                          <TableHead>Pedido</TableHead>
-                          <TableHead>Origem</TableHead>
-                          <TableHead>Prioridade</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Ações</TableHead>
+                          <TableCell colSpan={5} className="text-center py-10 text-slate-400 font-medium text-sm">
+                            Nenhum pedido recebido no momento.
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {receivedOrders.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                              Nenhum pedido recebido.
+                      ) : (
+                        receivedOrders.map(order => (
+                          <TableRow key={order.id} className="hover:bg-slate-50/50 transition-colors border-b last:border-0">
+                            <TableCell className="font-bold text-slate-900 pl-6">#{order.orderNumber}</TableCell>
+                            <TableCell className="font-medium text-slate-600 text-sm">{order.originCity}</TableCell>
+                            <TableCell>
+                              <Badge className={`${PRIORITY_COLORS[order.priority]} border-0 font-bold px-2 py-0.5 rounded-lg text-[10px]`}>
+                                {order.priority}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${STATUS_COLORS[order.status]} text-white border-0 px-2 py-0.5 rounded-lg font-bold shadow-sm text-[10px]`}>
+                                {order.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="pr-6">
+                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="font-bold text-slate-600 hover:text-blue-700 h-8 px-2 text-xs">Ver Detalhes</Button>
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          receivedOrders.map(order => (
-                            <TableRow key={order.id}>
-                              <TableCell className="font-medium">#{order.orderNumber}</TableCell>
-                              <TableCell>{order.originCity}</TableCell>
-                              <TableCell>
-                                <Badge className={PRIORITY_COLORS[order.priority]}>
-                                  {order.priority}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge className={`${STATUS_COLORS[order.status]} text-white`}>
-                                  {order.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>Ver Detalhes</Button>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </TabsContent>
 
-                <TabsContent value="sent">
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
+                <TabsContent value="sent" className="m-0">
+                  <Table>
+                    <TableHeader className="bg-slate-50/50">
+                      <TableRow className="hover:bg-transparent border-b">
+                        <TableHead className="font-bold text-slate-900 py-3 pl-6">Pedido</TableHead>
+                        <TableHead className="font-bold text-slate-900 py-3">Destino</TableHead>
+                        <TableHead className="font-bold text-slate-900 py-3">Prioridade</TableHead>
+                        <TableHead className="font-bold text-slate-900 py-3">Status</TableHead>
+                        <TableHead className="font-bold text-slate-900 py-3 pr-6">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sentOrders.length === 0 ? (
                         <TableRow>
-                          <TableHead>Pedido</TableHead>
-                          <TableHead>Destino</TableHead>
-                          <TableHead>Prioridade</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Ações</TableHead>
+                          <TableCell colSpan={5} className="text-center py-10 text-slate-400 font-medium text-sm">
+                            Nenhum pedido enviado no momento.
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {sentOrders.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                              Nenhum pedido enviado.
+                      ) : (
+                        sentOrders.map(order => (
+                          <TableRow key={order.id} className="hover:bg-slate-50/50 transition-colors border-b last:border-0">
+                            <TableCell className="font-bold text-slate-900 pl-6">#{order.orderNumber}</TableCell>
+                            <TableCell className="font-medium text-slate-600 text-sm">{order.destinationCity}</TableCell>
+                            <TableCell>
+                              <Badge className={`${PRIORITY_COLORS[order.priority]} border-0 font-bold px-2 py-0.5 rounded-lg text-[10px]`}>
+                                {order.priority}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${STATUS_COLORS[order.status]} text-white border-0 px-2 py-0.5 rounded-lg font-bold shadow-sm text-[10px]`}>
+                                {order.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="pr-6">
+                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="font-bold text-slate-600 hover:text-blue-700 h-8 px-2 text-xs">Editar</Button>
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          sentOrders.map(order => (
-                            <TableRow key={order.id}>
-                              <TableCell className="font-medium">#{order.orderNumber}</TableCell>
-                              <TableCell>{order.destinationCity}</TableCell>
-                              <TableCell>
-                                <Badge className={PRIORITY_COLORS[order.priority]}>
-                                  {order.priority}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge className={`${STATUS_COLORS[order.status]} text-white`}>
-                                  {order.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Button variant="outline" size="sm" onClick={() => setSelectedOrder(order)}>Editar</Button>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Tabs>
         </div>
 
         <div className="lg:col-span-1">
@@ -328,6 +332,8 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
             currentCity={currentCity}
             onMarkAsRead={markAsRead}
             onMarkAllAsRead={markAllAsRead}
+            onClearAll={clearNotifications}
+            onSelectOrder={handleSelectOrderFromNotification}
           />
         </div>
       </div>

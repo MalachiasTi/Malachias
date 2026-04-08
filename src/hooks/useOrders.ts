@@ -66,6 +66,7 @@ export function useOrders() {
         toCity: orderData.destinationCity,
         message: `Novo pedido #${orderData.orderNumber} criado por ${orderData.originCity}`,
         timestamp: now,
+        createdBy: orderData.originCity,
         readBy: [orderData.originCity]
       });
 
@@ -107,6 +108,7 @@ export function useOrders() {
         toCity: order.destinationCity,
         message: `Pedido #${order.orderNumber}: Status alterado para "${status}" por ${city}${note ? ` (${note})` : ''}`,
         timestamp: now,
+        createdBy: city,
         readBy: [city]
       });
 
