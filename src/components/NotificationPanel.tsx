@@ -120,7 +120,7 @@ export default function NotificationPanel({
                         }`}>
                           {n.type === 'order_created' && !n.readBy.includes(currentCity) ? (
                             <div className={`${cityColor.primary} w-4 h-4 rounded flex items-center justify-center`}>
-                              <span className="text-[7px] text-white font-bold">NEW</span>
+                              <span className="text-[7px] text-white font-bold">NOVO</span>
                             </div>
                           ) : (
                             <Clock className={`w-3 h-3 ${getStatusColor(n.newStatus).split(' ')[1]}`} />
