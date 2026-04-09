@@ -119,7 +119,7 @@ export default function AdminView() {
   return (
     <div className="space-y-6">
       <div className={`bg-white p-5 rounded-xl border-2 ${cityColor.border} shadow-sm`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <Card 
             className={`bg-white border-slate-200 shadow-none cursor-pointer transition-all hover:${cityColor.border.replace('border-', 'border-')} ${filter === 'all' ? `ring-2 ${cityColor.primary.replace('bg-', 'ring-')} border-transparent` : ''}`}
             onClick={() => setFilter('all')}
@@ -190,8 +190,8 @@ export default function AdminView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.6fr_1.2fr] gap-6">
+        <div className="space-y-6">
           <Card className={`border-t-4 ${cityColor.border.replace('border-', 'border-t-')}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-sm">
@@ -295,8 +295,8 @@ export default function AdminView() {
           </Card>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex flex-wrap gap-4 justify-between items-center">
+        <div className="space-y-6 w-full">
+          <div className="flex flex-wrap gap-4 justify-between items-center w-full">
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">
               Histórico Geral de Operações 
               {filter !== 'all' && (
@@ -307,7 +307,7 @@ export default function AdminView() {
             </h2>
           </div>
 
-          <Card className="border-none shadow-xl overflow-hidden">
+          <Card className="border-none shadow-xl overflow-hidden w-full">
             <CardContent className="p-0">
               <Table>
                 <TableHeader className="bg-slate-50">
@@ -350,7 +350,7 @@ export default function AdminView() {
           </Card>
         </div>
 
-        <div className="lg:col-span-1">
+        <div>
           <NotificationPanel 
             notifications={notifications}
             unreadCount={unreadCount}

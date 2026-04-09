@@ -123,8 +123,8 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="space-y-6 lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.6fr_1.2fr] gap-6">
+        <div className="space-y-6">
           <Card className={`border-t-4 ${cityColor.border.replace('border-', 'border-t-')}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -235,9 +235,9 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
           </Card>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="received" className="h-full">
-            <Card className="h-full border-none shadow-xl overflow-hidden rounded-2xl">
+        <div className="space-y-6 w-full">
+          <Tabs defaultValue="received" className="h-full w-full">
+            <Card className="h-full border-none shadow-xl overflow-hidden rounded-2xl w-full">
               <CardHeader className="space-y-6 bg-slate-50/50 pb-6">
                 <TabsList className="grid w-full grid-cols-2 bg-slate-200/50 p-1 rounded-xl">
                   <TabsTrigger value="received" className="flex items-center gap-2 font-bold rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm py-2.5">
@@ -342,7 +342,7 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
           </Tabs>
         </div>
 
-        <div className="lg:col-span-1">
+        <div>
           <NotificationPanel 
             notifications={notifications}
             unreadCount={unreadCount}
