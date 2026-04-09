@@ -119,7 +119,7 @@ export default function AdminView() {
   return (
     <div className="space-y-6">
       <div className={`bg-white p-5 rounded-xl border-2 ${cityColor.border} shadow-sm`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card 
             className={`bg-white border-slate-200 shadow-none cursor-pointer transition-all hover:${cityColor.border.replace('border-', 'border-')} ${filter === 'all' ? `ring-2 ${cityColor.primary.replace('bg-', 'ring-')} border-transparent` : ''}`}
             onClick={() => setFilter('all')}
@@ -191,20 +191,18 @@ export default function AdminView() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 space-y-6">
-          <div className="flex flex-wrap gap-4 justify-between items-center">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              Histórico Geral de Operações 
-              {filter !== 'all' && (
-                <span className="ml-2 text-sm font-medium text-slate-400">
-                  (Filtrado: {filter === 'completed' ? 'Concluídos' : filter === 'pending' ? 'Pendentes' : 'Divergências'})
-                </span>
-              )}
-            </h2>
-            <div className="flex gap-3">
+        <div className="lg:col-span-1 space-y-6">
+          <Card className={`border-t-4 ${cityColor.border.replace('border-', 'border-t-')}`}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Settings className={`w-4 h-4 ${cityColor.text}`} />
+                Ações Administrativas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2 font-bold border-slate-300">
+                  <Button variant="outline" className="w-full flex items-center justify-start gap-2 font-bold border-slate-300">
                     <Settings className="w-4 h-4" />
                     Configurações
                   </Button>
@@ -248,7 +246,7 @@ export default function AdminView() {
                 </DialogContent>
               </Dialog>
 
-              <Button variant="outline" onClick={handleExportExcel} className="flex items-center gap-2 font-bold border-slate-300">
+              <Button variant="outline" onClick={handleExportExcel} className="w-full flex items-center justify-start gap-2 font-bold border-slate-300">
                 <FileSpreadsheet className="w-4 h-4" />
                 Exportar Excel
               </Button>
@@ -257,7 +255,7 @@ export default function AdminView() {
                 <DialogTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    className="flex items-center gap-2 font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
+                    className="w-full flex items-center justify-start gap-2 font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
                   >
                     <Trash2 className="w-4 h-4" />
                     Limpar Dia
@@ -293,7 +291,20 @@ export default function AdminView() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex flex-wrap gap-4 justify-between items-center">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              Histórico Geral de Operações 
+              {filter !== 'all' && (
+                <span className="ml-2 text-sm font-medium text-slate-400">
+                  (Filtrado: {filter === 'completed' ? 'Concluídos' : filter === 'pending' ? 'Pendentes' : 'Divergências'})
+                </span>
+              )}
+            </h2>
           </div>
 
           <Card className="border-none shadow-xl overflow-hidden">
