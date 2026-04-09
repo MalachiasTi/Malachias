@@ -9,18 +9,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { PlusCircle, Search, ArrowUpRight, ArrowDownLeft, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { 
+  PlusCircle, 
+  Search, 
+  ArrowUpRight, 
+  ArrowDownLeft, 
+  Clock, 
+  AlertCircle, 
+  CheckCircle2,
+  AlertTriangle
+} from 'lucide-react';
 import { CITIES, STATUS_COLORS, PRIORITY_COLORS } from '../constants';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useOrders } from '../hooks/useOrders';
 import { useNotifications } from '../hooks/useNotifications';
 import OrderDetails from './OrderDetails';
 import NotificationPanel from './NotificationPanel';
 import { CITY_COLORS } from '../constants';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from './ui/dialog';
 
 interface EstoquistaViewProps {
   currentCity: City;
@@ -45,6 +55,8 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
   const [complementNote, setComplementNote] = useState('');
   const [foundOrder, setFoundOrder] = useState<Order | null>(null);
 
+  const [isConfirming, setIsConfirming] = useState(false);
+
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newOrder.orderNumber || !newOrder.destinationCity) {
@@ -57,6 +69,10 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
       return;
     }
 
+    setIsConfirming(true);
+  };
+
+  const confirmCreateOrder = async () => {
     await createOrder({
       orderNumber: newOrder.orderNumber,
       originCity: currentCity,
@@ -66,6 +82,7 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
     });
     
     setNewOrder({ orderNumber: '', destinationCity: '', priority: 'Normal', observations: '' });
+    setIsConfirming(false);
   };
 
   const handleUpdateOrder = async (orderId: string, status: OrderStatus, note: string) => {
@@ -269,7 +286,7 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
                               </Badge>
                             </TableCell>
                             <TableCell className="pr-6">
-                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="font-bold text-slate-600 hover:text-blue-700 h-8 px-2 text-xs">Ver Detalhes</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-2 text-xs`}>Ver Detalhes</Button>
                             </TableCell>
                           </TableRow>
                         ))
@@ -312,7 +329,7 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
                               </Badge>
                             </TableCell>
                             <TableCell className="pr-6">
-                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="font-bold text-slate-600 hover:text-blue-700 h-8 px-2 text-xs">Editar</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-2 text-xs`}>Editar</Button>
                             </TableCell>
                           </TableRow>
                         ))
@@ -348,6 +365,44 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
           currentCity={currentCity}
         />
       )}
+
+      <Dialog open={isConfirming} onOpenChange={setIsConfirming}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-5 h-5" />
+              Confirmar Envio de Pedido
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Você está prestes a enviar o pedido <span className="font-bold text-slate-900">#{newOrder.orderNumber}</span> para a unidade de <span className="font-bold text-slate-900">{newOrder.destinationCity}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-slate-50 p-4 rounded-lg space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Origem:</span>
+              <span className="font-bold">{currentCity}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Destino:</span>
+              <span className="font-bold">{newOrder.destinationCity}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Prioridade:</span>
+              <Badge className={`${PRIORITY_COLORS[newOrder.priority as Priority]} border-0 font-bold px-2 py-0.5 rounded-lg text-[10px]`}>
+                {newOrder.priority}
+              </Badge>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsConfirming(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button onClick={confirmCreateOrder} className={`flex-1 ${cityColor.primary} hover:opacity-90`}>
+              Confirmar e Enviar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

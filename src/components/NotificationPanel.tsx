@@ -30,13 +30,24 @@ export default function NotificationPanel({
   onClearAll,
   onSelectOrder
 }: NotificationPanelProps) {
+  const cityColor = currentCity !== 'Geral' ? CITY_COLORS[currentCity as City] : { primary: 'bg-blue-700', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' };
+
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'Em separação': return 'bg-amber-100 text-amber-600';
+      case 'Concluído': return 'bg-emerald-100 text-emerald-600';
+      case 'Divergência': return 'bg-red-100 text-red-600';
+      default: return 'bg-slate-100 text-slate-500';
+    }
+  };
+
   return (
     <Card className="h-full flex flex-col shadow-xl border-slate-200 rounded-xl overflow-hidden max-h-[calc(100vh-250px)]">
       <CardHeader className="pb-3 border-b bg-slate-50/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-blue-100 p-1.5 rounded-lg">
-              <Bell className="w-4 h-4 text-blue-700" />
+            <div className={`${cityColor.bg} p-1.5 rounded-lg`}>
+              <Bell className={`w-4 h-4 ${cityColor.text}`} />
             </div>
             <CardTitle className="text-base font-bold text-slate-900">Notificações</CardTitle>
             {unreadCount > 0 && (
@@ -49,7 +60,7 @@ export default function NotificationPanel({
             variant="ghost" 
             size="sm" 
             onClick={onMarkAllAsRead}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-bold text-[10px] h-7 px-2"
+            className={`${cityColor.text} hover:${cityColor.text} hover:${cityColor.bg} font-bold text-[10px] h-7 px-2`}
           >
             <CheckCheck className="w-3 h-3 mr-1" />
             Ler tudo
@@ -80,7 +91,7 @@ export default function NotificationPanel({
                     className={`p-3 rounded-lg border transition-all cursor-pointer hover:shadow-sm active:scale-[0.98] ${
                       n.readBy.includes(currentCity) 
                         ? 'bg-white border-slate-100 opacity-60' 
-                        : 'bg-white border-blue-50 shadow-sm ring-1 ring-blue-50/50'
+                        : `bg-white ${cityColor.border.replace('border-', 'border-')} shadow-sm ring-1 ${cityColor.bg}/50`
                     }`}
                     onClick={() => {
                       if (!n.readBy.includes(currentCity)) onMarkAsRead(n.id);
@@ -105,14 +116,14 @@ export default function NotificationPanel({
 
                       <div className="flex gap-2">
                         <div className={`mt-0.5 w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
-                          n.type === 'order_created' ? 'bg-blue-100' : 'bg-slate-100'
+                          n.type === 'order_created' && !n.readBy.includes(currentCity) ? cityColor.bg : getStatusColor(n.newStatus).split(' ')[0]
                         }`}>
-                          {n.type === 'order_created' ? (
-                            <div className="bg-blue-600 w-4 h-4 rounded flex items-center justify-center">
+                          {n.type === 'order_created' && !n.readBy.includes(currentCity) ? (
+                            <div className={`${cityColor.primary} w-4 h-4 rounded flex items-center justify-center`}>
                               <span className="text-[7px] text-white font-bold">NEW</span>
                             </div>
                           ) : (
-                            <Clock className="w-3 h-3 text-slate-500" />
+                            <Clock className={`w-3 h-3 ${getStatusColor(n.newStatus).split(' ')[1]}`} />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">

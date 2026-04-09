@@ -19,7 +19,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { STATUS_COLORS, CITIES } from '../constants';
+import { STATUS_COLORS, CITIES, CITY_COLORS } from '../constants';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
@@ -33,9 +33,12 @@ import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
 
 export default function AdminView() {
+  const currentCity: City = 'Pirassununga';
   const { orders, updateOrderStatus, clearDailyOrders } = useOrders();
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications('Geral');
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications(currentCity);
   const { adminPassword, updatePassword } = useAdminSettings();
+  
+  const cityColor = CITY_COLORS[currentCity];
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending' | 'divergence'>('all');
@@ -100,7 +103,7 @@ export default function AdminView() {
   };
 
   const handleUpdateOrder = async (orderId: string, status: OrderStatus, note: string) => {
-    await updateOrderStatus(orderId, status, 'Admin', 'Geral', note);
+    await updateOrderStatus(orderId, status, 'Admin', currentCity, note);
     setSelectedOrder(null);
   };
 
@@ -115,20 +118,20 @@ export default function AdminView() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-5 rounded-xl border-2 border-blue-100 shadow-sm">
+      <div className={`bg-white p-5 rounded-xl border-2 ${cityColor.border} shadow-sm`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card 
-            className={`bg-white border-slate-200 shadow-none cursor-pointer transition-all hover:border-blue-400 ${filter === 'all' ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
+            className={`bg-white border-slate-200 shadow-none cursor-pointer transition-all hover:${cityColor.border.replace('border-', 'border-')} ${filter === 'all' ? `ring-2 ${cityColor.primary.replace('bg-', 'ring-')} border-transparent` : ''}`}
             onClick={() => setFilter('all')}
           >
             <CardContent className="pt-5">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-xs font-bold text-blue-600 mb-1 uppercase tracking-wider">Total de Pedidos</p>
+                  <p className={`text-xs font-bold ${cityColor.text} mb-1 uppercase tracking-wider`}>Total de Pedidos</p>
                   <h3 className="text-2xl font-bold text-slate-900">{stats.total}</h3>
                 </div>
-                <div className="bg-blue-50 p-2 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-blue-500" />
+                <div className={`${cityColor.bg} p-2 rounded-lg`}>
+                  <TrendingUp className={`w-6 h-6 ${cityColor.text}`} />
                 </div>
               </div>
             </CardContent>
@@ -209,7 +212,7 @@ export default function AdminView() {
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                      <Lock className="w-5 h-5 text-blue-600" />
+                      <Lock className={`w-5 h-5 ${cityColor.text}`} />
                       Alterar Senha ADM
                     </DialogTitle>
                   </DialogHeader>
@@ -238,7 +241,7 @@ export default function AdminView() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleChangePassword} className="bg-blue-700 hover:bg-blue-800">
+                    <Button onClick={handleChangePassword} className={`${cityColor.primary} hover:opacity-90`}>
                       Salvar Nova Senha
                     </Button>
                   </DialogFooter>
@@ -326,7 +329,7 @@ export default function AdminView() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="font-bold text-slate-600 hover:text-blue-700 h-8 px-2 text-xs">Ver</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-2 text-xs`}>Ver</Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -340,7 +343,7 @@ export default function AdminView() {
           <NotificationPanel 
             notifications={notifications}
             unreadCount={unreadCount}
-            currentCity="Geral"
+            currentCity={currentCity}
             onMarkAsRead={markAsRead}
             onMarkAllAsRead={markAllAsRead}
             onClearAll={clearNotifications}
@@ -356,7 +359,7 @@ export default function AdminView() {
           onClose={() => setSelectedOrder(null)}
           onUpdate={handleUpdateOrder}
           canEdit={true}
-          currentCity="Geral"
+          currentCity={currentCity}
         />
       )}
     </div>

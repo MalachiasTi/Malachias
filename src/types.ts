@@ -38,6 +38,7 @@ export interface AppNotification {
   timestamp: number;
   createdBy: string; // The city or 'Admin' that performed the action
   readBy: string[]; // List of city names that have seen this
+  newStatus?: OrderStatus;
 }
 
 export interface UserSession {

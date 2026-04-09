@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
-import { Building2, UserCircle2, ShieldCheck, LogOut, Bell, Lock } from 'lucide-react';
+import { UserCircle2, ShieldCheck, LogOut, Bell, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Input } from './components/ui/input';
 
@@ -31,7 +31,7 @@ export default function App() {
     }
   }, [selectedCity, selectedRole]);
 
-  const cityColor = session ? CITY_COLORS[session.city] : null;
+  const cityColor = session ? CITY_COLORS[session.city] : (selectedCity ? CITY_COLORS[selectedCity as City] : null);
 
   const handleLogin = () => {
     if (!selectedCity || !selectedRole) {
@@ -88,10 +88,10 @@ export default function App() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <Card className="border-t-4 border-t-blue-700 shadow-xl">
+          <Card className={`border-t-4 ${cityColor?.border?.replace('border-', 'border-t-') || 'border-t-blue-700'} shadow-xl transition-colors duration-500`}>
             <CardHeader className="text-center">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <Building2 className="w-8 h-8 text-blue-700" />
+              <div className={`mx-auto w-16 h-16 ${cityColor?.bg || 'bg-blue-100'} rounded-full flex items-center justify-center mb-4 transition-colors duration-500`}>
+                <span className={`text-3xl font-black ${cityColor?.text || 'text-blue-700'}`}>M</span>
               </div>
               <CardTitle className="text-2xl font-bold text-gray-900">Malachias AutoPendencias</CardTitle>
               <CardDescription>Selecione sua unidade e modo de acesso</CardDescription>
@@ -204,8 +204,8 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-700 p-1.5 rounded-lg">
-                <Building2 className="w-5 h-5 text-white" />
+              <div className={`${cityColor?.primary || 'bg-blue-700'} w-8 h-8 rounded-lg flex items-center justify-center`}>
+                <span className="font-black text-lg text-white">M</span>
               </div>
               <span className="font-bold text-xl text-slate-900 tracking-tight">Malachias AutoPendencias</span>
             </div>
@@ -224,9 +224,9 @@ export default function App() {
         </div>
       </header>
       
-      <div className="bg-blue-700 text-white py-2.5 px-4 shadow-md sticky top-20 z-30">
+      <div className={`${cityColor?.primary || 'bg-blue-700'} text-white py-2.5 px-4 shadow-md sticky top-20 z-30`}>
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-3 text-[11px] font-bold uppercase tracking-[0.15em]">
-          <Building2 className="w-4 h-4" />
+          <span className="font-black text-sm">M</span>
           VOCÊ ESTÁ LOGADO NA UNIDADE: <span className="underline decoration-2 underline-offset-4">{session.city}</span>
         </div>
       </div>

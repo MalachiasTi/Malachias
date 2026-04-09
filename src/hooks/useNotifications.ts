@@ -24,8 +24,8 @@ export function useNotifications(currentCity: City | 'Geral') {
       snapshot.forEach((doc) => {
         const data = doc.data() as AppNotification;
         const isRelevant = currentCity === 'Geral' || 
-                          ((data.fromCity === currentCity || data.toCity === currentCity) && 
-                           data.createdBy !== currentCity);
+                          (data.toCity === currentCity && data.createdBy !== currentCity) ||
+                          (data.fromCity === currentCity && data.createdBy !== currentCity);
         
         if (isRelevant) {
           notifs.push({ ...data, id: doc.id });

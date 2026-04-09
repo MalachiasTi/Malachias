@@ -67,7 +67,8 @@ export function useOrders() {
         message: `Novo pedido #${orderData.orderNumber} criado por ${orderData.originCity}`,
         timestamp: now,
         createdBy: orderData.originCity,
-        readBy: [orderData.originCity]
+        readBy: [orderData.originCity],
+        newStatus: 'Aguardando separação'
       });
 
       toast.success("Pedido criado com sucesso!");
@@ -109,7 +110,8 @@ export function useOrders() {
         message: `Pedido #${order.orderNumber}: Status alterado para "${status}" por ${city}${note ? ` (${note})` : ''}`,
         timestamp: now,
         createdBy: city,
-        readBy: [city]
+        readBy: [city],
+        newStatus: status
       });
 
       toast.success(`Status atualizado: ${status}`);
