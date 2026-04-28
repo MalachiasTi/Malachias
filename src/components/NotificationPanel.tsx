@@ -42,8 +42,8 @@ export default function NotificationPanel({
   };
 
   return (
-    <Card className="h-full flex flex-col shadow-xl border-slate-200 rounded-xl overflow-hidden max-h-[calc(100vh-250px)]">
-      <CardHeader className="pb-3 border-b bg-slate-50/50">
+    <Card className="flex flex-col shadow-xl border-slate-200 rounded-xl overflow-hidden min-h-[400px]">
+      <CardHeader className="pb-3 border-b bg-slate-50/50 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className={`${cityColor.bg} p-1.5 rounded-lg`}>
@@ -68,7 +68,7 @@ export default function NotificationPanel({
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0 flex flex-col overflow-hidden">
-        <ScrollArea className="flex-1">
+        <ScrollArea className="h-[calc(100vh-350px)] w-full">
           <div className="p-3 space-y-3">
             <AnimatePresence mode="popLayout">
               {notifications.length === 0 ? (

@@ -34,7 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 
 export default function AdminView() {
   const currentCity: City = 'Pirassununga';
-  const { orders, updateOrderStatus, clearDailyOrders } = useOrders();
+  const { orders, updateOrderStatus, clearDailyOrders, deleteOrder } = useOrders();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications(currentCity);
   const { adminPassword, updatePassword } = useAdminSettings();
   
@@ -48,6 +48,8 @@ export default function AdminView() {
   const [showPassword, setShowPassword] = useState(false);
   
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [clearPasswordInput, setClearPasswordInput] = useState('');
 
   const stats = {
@@ -90,6 +92,20 @@ export default function AdminView() {
     await clearDailyOrders();
     setIsClearConfirmOpen(false);
     setClearPasswordInput('');
+  };
+
+  const handleDeleteOrder = async () => {
+    if (clearPasswordInput !== adminPassword) {
+      toast.error('Senha de administrador incorreta.');
+      return;
+    }
+    
+    if (orderToDelete) {
+      await deleteOrder(orderToDelete);
+      setIsDeleteConfirmOpen(false);
+      setOrderToDelete(null);
+      setClearPasswordInput('');
+    }
   };
 
   const handleChangePassword = async () => {
@@ -340,7 +356,27 @@ export default function AdminView() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-2 text-xs`}>Ver</Button>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setSelectedOrder(order)} 
+                            className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-2 text-xs`}
+                          >
+                            Ver
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setOrderToDelete(order.id);
+                              setIsDeleteConfirmOpen(true);
+                            }} 
+                            className="font-bold text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-2 text-xs"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -369,10 +405,53 @@ export default function AdminView() {
           isOpen={!!selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onUpdate={handleUpdateOrder}
+          onDelete={(id) => {
+            setOrderToDelete(id);
+            setIsDeleteConfirmOpen(true);
+          }}
           canEdit={true}
           currentCity={currentCity}
         />
       )}
+
+      {/* Individual Delete Confirmation Dialog */}
+      <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Confirmar Exclusão de Pedido
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-slate-600">
+              Você está prestes a excluir permanentemente o pedido <strong>#{orders.find(o => o.id === orderToDelete)?.orderNumber}</strong>. Esta ação não pode ser desfeita.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="delete-password">Senha de Administrador</Label>
+              <Input
+                id="delete-password"
+                type="password"
+                value={clearPasswordInput}
+                onChange={(e) => setClearPasswordInput(e.target.value)}
+                placeholder="Digite a senha para confirmar"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsDeleteConfirmOpen(false);
+              setOrderToDelete(null);
+              setClearPasswordInput('');
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleDeleteOrder} className="bg-red-600 hover:bg-red-700">
+              Excluir Pedido
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

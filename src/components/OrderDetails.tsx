@@ -19,13 +19,15 @@ interface OrderDetailsProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (orderId: string, status: OrderStatus, note: string) => void;
+  onDelete?: (orderId: string) => void;
   canEdit: boolean;
   currentCity: string;
 }
 
-export default function OrderDetails({ order, isOpen, onClose, onUpdate, canEdit, currentCity }: OrderDetailsProps) {
+export default function OrderDetails({ order, isOpen, onClose, onUpdate, onDelete, canEdit, currentCity }: OrderDetailsProps) {
   const [newStatus, setNewStatus] = useState<OrderStatus>(order.status);
   const [note, setNote] = useState('');
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const cityColor = currentCity !== 'Geral' ? CITY_COLORS[currentCity as City] : { primary: 'bg-blue-700' };
   const isDestination = currentCity === order.destinationCity;
@@ -38,8 +40,9 @@ export default function OrderDetails({ order, isOpen, onClose, onUpdate, canEdit
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex justify-between items-start pr-8">
             <div>
@@ -153,10 +156,52 @@ export default function OrderDetails({ order, isOpen, onClose, onUpdate, canEdit
           </div>
         </div>
 
-        <DialogFooter className="border-t pt-4">
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
+        <DialogFooter className="border-t pt-4 flex justify-between items-center bg-white">
+          <div className="flex gap-2">
+            {onDelete && (
+              <Button 
+                variant="ghost" 
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 font-bold"
+                onClick={() => setIsDeleteConfirmOpen(true)}
+              >
+                Excluir Pedido
+              </Button>
+            )}
+          </div>
+          <Button variant="outline" onClick={onClose} className="font-bold">Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle className="text-red-600">Confirmar Exclusão</DialogTitle>
+        </DialogHeader>
+        <div className="py-2 text-sm text-gray-600">
+          Tem certeza que deseja excluir o pedido <strong>#{order.orderNumber}</strong>? Esta ação é irreversível.
+          Se você for ADM, a exclusão será processada após confirmação de senha na tela principal (se aplicável) ou diretamente aqui se o fluxo permitir.
+          <p className="mt-2 text-xs font-bold text-red-500 italic">
+            Nota: Use o botão de lixeira na tabela principal para excluir com validação de senha.
+          </p>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)}>Cancelar</Button>
+          <Button 
+            className="bg-red-600 hover:bg-red-700"
+            onClick={() => {
+              if (onDelete) {
+                onDelete(order.id);
+                setIsDeleteConfirmOpen(false);
+                onClose();
+              }
+            }}
+          >
+            Confirmar Exclusão
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 }

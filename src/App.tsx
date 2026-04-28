@@ -15,6 +15,7 @@ import EstoquistaView from './components/EstoquistaView';
 import AdminView from './components/AdminView';
 import { CITY_COLORS } from './constants';
 import { useAdminSettings } from './hooks/useAdminSettings';
+import { requestNotificationPermission } from './lib/notifications';
 
 export default function App() {
   const [session, setSession] = useState<UserSession | null>(null);
@@ -33,11 +34,14 @@ export default function App() {
 
   const cityColor = session ? CITY_COLORS[session.city] : (selectedCity ? CITY_COLORS[selectedCity as City] : null);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!selectedCity || !selectedRole) {
       toast.error('Selecione uma cidade e um modo de acesso.');
       return;
     }
+
+    // Request permission for system notifications
+    await requestNotificationPermission();
 
     if (selectedRole === 'Administrador') {
       if (selectedCity !== 'Pirassununga') {

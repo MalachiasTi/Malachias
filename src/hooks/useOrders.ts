@@ -150,5 +150,15 @@ export function useOrders() {
     }
   };
 
-  return { orders, loading, createOrder, updateOrderStatus, clearDailyOrders };
+  const deleteOrder = async (orderId: string) => {
+    try {
+      await deleteDoc(doc(db, 'orders', orderId));
+      toast.success("Pedido excluído com sucesso.");
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast.error("Erro ao excluir pedido.");
+    }
+  };
+
+  return { orders, loading, createOrder, updateOrderStatus, clearDailyOrders, deleteOrder };
 }
