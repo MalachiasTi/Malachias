@@ -34,7 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 
 export default function AdminView() {
   const currentCity: City = 'Pirassununga';
-  const { orders, updateOrderStatus, clearDailyOrders, deleteOrder } = useOrders();
+  const { orders, updateOrderStatus, clearDailyOrders, deleteOrder, deleteOrders } = useOrders();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications(currentCity);
   const { adminPassword, updatePassword } = useAdminSettings();
   
@@ -42,6 +42,7 @@ export default function AdminView() {
   
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending' | 'divergence'>('all');
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -49,6 +50,7 @@ export default function AdminView() {
   
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [clearPasswordInput, setClearPasswordInput] = useState('');
 
@@ -105,7 +107,44 @@ export default function AdminView() {
       setIsDeleteConfirmOpen(false);
       setOrderToDelete(null);
       setClearPasswordInput('');
+      
+      // Remove from selection if it was there
+      const newSelected = new Set(selectedOrderIds);
+      newSelected.delete(orderToDelete);
+      setSelectedOrderIds(newSelected);
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (clearPasswordInput !== adminPassword) {
+      toast.error('Senha de administrador incorreta.');
+      return;
+    }
+    
+    if (selectedOrderIds.size > 0) {
+      await deleteOrders(Array.from(selectedOrderIds));
+      setIsBulkDeleteConfirmOpen(false);
+      setSelectedOrderIds(new Set());
+      setClearPasswordInput('');
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedOrderIds.size === filteredOrders.length) {
+      setSelectedOrderIds(new Set());
+    } else {
+      setSelectedOrderIds(new Set(filteredOrders.map(o => o.id)));
+    }
+  };
+
+  const toggleSelectOrder = (orderId: string) => {
+    const newSelected = new Set(selectedOrderIds);
+    if (newSelected.has(orderId)) {
+      newSelected.delete(orderId);
+    } else {
+      newSelected.add(orderId);
+    }
+    setSelectedOrderIds(newSelected);
   };
 
   const handleChangePassword = async () => {
@@ -267,6 +306,17 @@ export default function AdminView() {
                 Exportar Excel
               </Button>
 
+              {selectedOrderIds.size > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsBulkDeleteConfirmOpen(true)}
+                  className="w-full flex items-center justify-start gap-2 font-bold border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Excluir Selecionados ({selectedOrderIds.size})
+                </Button>
+              )}
+
               <Dialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
                 <DialogTrigger asChild>
                   <Button 
@@ -328,6 +378,14 @@ export default function AdminView() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-10 py-4 px-4">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        checked={filteredOrders.length > 0 && selectedOrderIds.size === filteredOrders.length}
+                        onChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead className="font-bold text-slate-900 py-4">Pedido</TableHead>
                     <TableHead className="font-bold text-slate-900 py-4">Origem</TableHead>
                     <TableHead className="font-bold text-slate-900 py-4">Destino</TableHead>
@@ -338,7 +396,18 @@ export default function AdminView() {
                 </TableHeader>
                 <TableBody>
                   {filteredOrders.map(order => (
-                    <TableRow key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                    <TableRow 
+                      key={order.id} 
+                      className={`hover:bg-slate-50/50 transition-colors ${selectedOrderIds.has(order.id) ? 'bg-blue-50/30' : ''}`}
+                    >
+                      <TableCell className="py-4 px-4">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          checked={selectedOrderIds.has(order.id)}
+                          onChange={() => toggleSelectOrder(order.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-bold text-slate-900">#{order.orderNumber}</TableCell>
                       <TableCell className="font-medium text-slate-600">{order.originCity}</TableCell>
                       <TableCell className="font-medium text-slate-600">{order.destinationCity}</TableCell>
@@ -448,6 +517,44 @@ export default function AdminView() {
             </Button>
             <Button onClick={handleDeleteOrder} className="bg-red-600 hover:bg-red-700">
               Excluir Pedido
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={isBulkDeleteConfirmOpen} onOpenChange={setIsBulkDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Excluir Selecionados ({selectedOrderIds.size})
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-slate-600">
+              Você está prestes a excluir permanentemente <strong>{selectedOrderIds.size}</strong> pedidos selecionados. Esta ação não pode ser desfeita.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="bulk-delete-password">Senha de Administrador</Label>
+              <Input
+                id="bulk-delete-password"
+                type="password"
+                value={clearPasswordInput}
+                onChange={(e) => setClearPasswordInput(e.target.value)}
+                placeholder="Digite a senha para confirmar"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsBulkDeleteConfirmOpen(false);
+              setClearPasswordInput('');
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir Selecionados
             </Button>
           </DialogFooter>
         </DialogContent>

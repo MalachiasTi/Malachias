@@ -150,6 +150,20 @@ export function useOrders() {
     }
   };
 
+  const deleteOrders = async (orderIds: string[]) => {
+    try {
+      const batch = writeBatch(db);
+      orderIds.forEach((id) => {
+        batch.delete(doc(db, 'orders', id));
+      });
+      await batch.commit();
+      toast.success(`${orderIds.length} pedidos excluídos com sucesso.`);
+    } catch (error) {
+      console.error("Error deleting orders:", error);
+      toast.error("Erro ao excluir pedidos selecionados.");
+    }
+  };
+
   const deleteOrder = async (orderId: string) => {
     try {
       await deleteDoc(doc(db, 'orders', orderId));
@@ -160,5 +174,5 @@ export function useOrders() {
     }
   };
 
-  return { orders, loading, createOrder, updateOrderStatus, clearDailyOrders, deleteOrder };
+  return { orders, loading, createOrder, updateOrderStatus, clearDailyOrders, deleteOrder, deleteOrders };
 }
