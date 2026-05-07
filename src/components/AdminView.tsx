@@ -51,6 +51,7 @@ export default function AdminView() {
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [exportDate, setExportDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [clearPasswordInput, setClearPasswordInput] = useState('');
 
@@ -70,7 +71,18 @@ export default function AdminView() {
   });
 
   const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(orders.map(o => ({
+    const selectedDateStr = new Date(exportDate + 'T00:00:00').toLocaleDateString('pt-BR');
+    
+    const filteredForExport = orders.filter(o => 
+      new Date(o.createdAt).toLocaleDateString('pt-BR') === selectedDateStr
+    );
+
+    if (filteredForExport.length === 0) {
+      toast.error(`Nenhum pedido encontrado para a data ${selectedDateStr}`);
+      return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(filteredForExport.map(o => ({
       'Pedido': o.orderNumber,
       'Origem': o.originCity,
       'Destino': o.destinationCity,
@@ -81,8 +93,8 @@ export default function AdminView() {
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Pedidos");
-    XLSX.writeFile(wb, `Malachias_Relatorio_${new Date().toISOString().split('T')[0]}.xlsx`);
-    toast.success('Relatório Excel exportado!');
+    XLSX.writeFile(wb, `Malachias_Relatorio_${exportDate}.xlsx`);
+    toast.success(`Relatório de ${selectedDateStr} exportado!`);
   };
 
   const handleDeleteDaily = async () => {
@@ -91,7 +103,7 @@ export default function AdminView() {
       return;
     }
     
-    await clearDailyOrders();
+    await clearDailyOrders(exportDate);
     setIsClearConfirmOpen(false);
     setClearPasswordInput('');
   };
@@ -256,12 +268,14 @@ export default function AdminView() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full flex items-center justify-start gap-2 font-bold border-slate-300">
-                    <Settings className="w-4 h-4" />
-                    Configurações
-                  </Button>
-                </DialogTrigger>
+                <DialogTrigger
+                  render={
+                    <Button variant="outline" className="w-full flex items-center justify-start gap-2 font-bold border-slate-300">
+                      <Settings className="w-4 h-4" />
+                      Configurações
+                    </Button>
+                  }
+                />
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
@@ -301,10 +315,26 @@ export default function AdminView() {
                 </DialogContent>
               </Dialog>
 
-              <Button variant="outline" onClick={handleExportExcel} className="w-full flex items-center justify-start gap-2 font-bold border-slate-300">
-                <FileSpreadsheet className="w-4 h-4" />
-                Exportar Excel
-              </Button>
+              <div className="space-y-1 pt-2">
+                <Label htmlFor="export-date" className="text-[10px] font-bold text-slate-500 uppercase ml-1">Data para Exportação</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="export-date"
+                    type="date" 
+                    value={exportDate}
+                    onChange={(e) => setExportDate(e.target.value)}
+                    className="h-9 text-xs"
+                  />
+                  <Button 
+                    variant="outline" 
+                    onClick={handleExportExcel} 
+                    className="flex-shrink-0 w-10 h-9 p-0 border-slate-300"
+                    title="Exportar Excel"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
 
               {selectedOrderIds.size > 0 && (
                 <Button 
@@ -318,25 +348,30 @@ export default function AdminView() {
               )}
 
               <Dialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full flex items-center justify-start gap-2 font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Limpar Dia
-                  </Button>
-                </DialogTrigger>
+                <DialogTrigger
+                  render={
+                    <Button 
+                      variant="ghost" 
+                      className="w-full flex items-center justify-start gap-2 font-bold bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Limpar Dia
+                    </Button>
+                  }
+                />
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle className="text-red-600 flex items-center gap-2">
                       <AlertTriangle className="w-5 h-5" />
-                      Confirmar Limpeza Total
+                      Limpar Pedidos ({new Date(exportDate + 'T00:00:00').toLocaleDateString('pt-BR')})
                     </DialogTitle>
                   </DialogHeader>
                   <div className="py-4 space-y-4">
                     <p className="text-sm text-slate-600">
-                      Esta ação apagará <strong>TODOS</strong> os pedidos e notificações do sistema. Esta operação é irreversível.
+                      Esta ação apagará <strong>TODOS</strong> os pedidos e notificações da data {new Date(exportDate + 'T00:00:00').toLocaleDateString('pt-BR')}.
+                    </p>
+                    <p className="text-xs font-bold text-red-500 italic">
+                      DICA: Exporte para Excel ANTES de limpar para manter um registro físico das operações.
                     </p>
                     <div className="space-y-2">
                       <Label htmlFor="clear-password">Senha de Administrador</Label>

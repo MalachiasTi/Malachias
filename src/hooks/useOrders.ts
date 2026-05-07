@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, updateDoc, doc, deleteDoc, getDocs, writeBatch, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, updateDoc, doc, deleteDoc, getDocs, writeBatch, orderBy, where } from 'firebase/firestore';
 import { Order, OrderStatus, Priority, City, OrderHistory } from '../types';
 import { toast } from 'sonner';
 
@@ -121,10 +121,18 @@ export function useOrders() {
     }
   };
 
-  const clearDailyOrders = async () => {
+  const clearDailyOrders = async (dateStr?: string) => {
     try {
-      // Clear orders
-      const orderSnapshot = await getDocs(collection(db, 'orders'));
+      let q = query(collection(db, 'orders'));
+      
+      if (dateStr) {
+        // Create range for the day in local time
+        const start = new Date(dateStr + 'T00:00:00').getTime();
+        const end = start + 86400000;
+        q = query(collection(db, 'orders'), where('createdAt', '>=', start), where('createdAt', '<', end));
+      }
+
+      const orderSnapshot = await getDocs(q);
       const orderDocs = orderSnapshot.docs;
       
       for (let i = 0; i < orderDocs.length; i += 500) {
@@ -133,8 +141,16 @@ export function useOrders() {
         await batch.commit();
       }
 
-      // Clear notifications
-      const notifSnapshot = await getDocs(collection(db, 'notifications'));
+      // Clear notifications for those orders specifically? 
+      // Current behavior clears ALL notifications. Let's make notifications also date-specific if possible.
+      let nq = query(collection(db, 'notifications'));
+      if (dateStr) {
+        const start = new Date(dateStr + 'T00:00:00').getTime();
+        const end = start + 86400000;
+        nq = query(collection(db, 'notifications'), where('timestamp', '>=', start), where('timestamp', '<', end));
+      }
+      
+      const notifSnapshot = await getDocs(nq);
       const notifDocs = notifSnapshot.docs;
 
       for (let i = 0; i < notifDocs.length; i += 500) {
@@ -143,7 +159,8 @@ export function useOrders() {
         await batch.commit();
       }
       
-      toast.success("Operações e notificações do dia limpas com sucesso.");
+      const dateMsg = dateStr ? `do dia ${new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR')}` : 'anteriores';
+      toast.success(`Operações e notificações ${dateMsg} limpas com sucesso.`);
     } catch (error) {
       console.error("Error clearing data:", error);
       toast.error("Erro ao limpar operações.");
