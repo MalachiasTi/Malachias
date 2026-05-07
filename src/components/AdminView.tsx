@@ -387,6 +387,7 @@ export default function AdminView() {
                       />
                     </TableHead>
                     <TableHead className="font-bold text-slate-900 py-4">Pedido</TableHead>
+                    <TableHead className="font-bold text-slate-900 py-4">Data</TableHead>
                     <TableHead className="font-bold text-slate-900 py-4">Origem</TableHead>
                     <TableHead className="font-bold text-slate-900 py-4">Destino</TableHead>
                     <TableHead className="font-bold text-slate-900 py-4">Status</TableHead>
@@ -409,6 +410,9 @@ export default function AdminView() {
                         />
                       </TableCell>
                       <TableCell className="font-bold text-slate-900">#{order.orderNumber}</TableCell>
+                      <TableCell className="font-medium text-slate-600 text-xs whitespace-nowrap">
+                        {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                      </TableCell>
                       <TableCell className="font-medium text-slate-600">{order.originCity}</TableCell>
                       <TableCell className="font-medium text-slate-600">{order.destinationCity}</TableCell>
                       <TableCell>
