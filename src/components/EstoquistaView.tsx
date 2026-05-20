@@ -56,6 +56,7 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
   const [foundOrder, setFoundOrder] = useState<Order | null>(null);
 
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +74,9 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
   };
 
   const confirmCreateOrder = async () => {
-    await createOrder({
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    const success = await createOrder({
       orderNumber: newOrder.orderNumber,
       originCity: currentCity,
       destinationCity: newOrder.destinationCity as City,
@@ -81,8 +84,11 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
       observations: newOrder.observations
     });
     
-    setNewOrder({ orderNumber: '', destinationCity: '', priority: 'Normal', observations: '' });
-    setIsConfirming(false);
+    setIsSubmitting(false);
+    if (success) {
+      setNewOrder({ orderNumber: '', destinationCity: '', priority: 'Normal', observations: '' });
+      setIsConfirming(false);
+    }
   };
 
   const handleUpdateOrder = async (orderId: string, status: OrderStatus, note: string) => {
@@ -366,7 +372,7 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
         />
       )}
 
-      <Dialog open={isConfirming} onOpenChange={setIsConfirming}>
+      <Dialog open={isConfirming} onOpenChange={(open) => { if (!isSubmitting) setIsConfirming(open); }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-600">
@@ -394,11 +400,20 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsConfirming(false)} className="flex-1">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsConfirming(false)} 
+              className="flex-1"
+              disabled={isSubmitting}
+            >
               Cancelar
             </Button>
-            <Button onClick={confirmCreateOrder} className={`flex-1 ${cityColor.primary} hover:opacity-90`}>
-              Confirmar e Enviar
+            <Button 
+              onClick={confirmCreateOrder} 
+              className={`flex-1 ${cityColor.primary} hover:opacity-90`}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Enviando...' : 'Confirmar e Enviar'}
             </Button>
           </DialogFooter>
         </DialogContent>

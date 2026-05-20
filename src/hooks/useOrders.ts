@@ -45,9 +45,24 @@ export function useOrders() {
     return () => unsubscribe();
   }, []);
 
-  const createOrder = async (orderData: Omit<Order, 'id' | 'history' | 'status' | 'createdAt' | 'updatedAt'>) => {
+  const createOrder = async (orderData: Omit<Order, 'id' | 'history' | 'status' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
     try {
       const now = Date.now();
+
+      // Check local state first for ultra-fast response
+      if (orders.some(o => o.orderNumber === orderData.orderNumber)) {
+        toast.error(`O pedido #${orderData.orderNumber} já existe.`);
+        return false;
+      }
+
+      // Query database to prevent race conditions or double submits
+      const q = query(collection(db, 'orders'), where('orderNumber', '==', orderData.orderNumber));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        toast.error(`O pedido #${orderData.orderNumber} já existe.`);
+        return false;
+      }
+
       const newOrder: Omit<Order, 'id'> = {
         ...orderData,
         status: 'Aguardando separação',
@@ -72,9 +87,11 @@ export function useOrders() {
       });
 
       toast.success("Pedido criado com sucesso!");
+      return true;
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Erro ao criar pedido.");
+      return false;
     }
   };
 
