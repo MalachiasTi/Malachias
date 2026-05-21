@@ -129,7 +129,7 @@ export default function NotificationPanel({
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start mb-0.5">
                             <span className="font-bold text-slate-900 text-xs truncate">
-                              {n.type === 'order_created' ? 'Novo Pedido' : 'Atualização'}
+                              {n.type === 'order_created' ? 'Novo Pedido' : n.type === 'note_added' ? 'Complemento' : 'Atualização'}
                             </span>
                             <span className="text-[9px] font-medium text-slate-400 flex items-center gap-1 shrink-0 ml-2">
                               {format(n.timestamp, 'HH:mm', { locale: ptBR })}

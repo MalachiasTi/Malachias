@@ -40,8 +40,12 @@ export function useNotifications(currentCity: City | 'Geral') {
           // Trigger system notification if it's new and we haven't notified for it in this session
           // We only do this after the first load to avoid notifying for existing old notifications
           if (!isFirstLoad.current && !notifiedIds.current.has(doc.id) && !data.readBy.includes(currentCity)) {
-            if (currentCity === 'Geral' || data.toCity === currentCity) {
-              const title = data.type === 'order_created' ? 'Novo Pedido Recebido' : 'Atualização de Pedido';
+            if (currentCity === 'Geral' || data.toCity === currentCity || data.fromCity === currentCity) {
+              const title = data.type === 'order_created' 
+                ? 'Novo Pedido Recebido' 
+                : data.type === 'note_added'
+                  ? 'Complemento de Pedido'
+                  : 'Atualização de Pedido';
               showSystemNotification(title, data.message);
               playNotificationSound();
               newlyNotified = true;

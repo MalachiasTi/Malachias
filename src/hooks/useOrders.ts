@@ -117,14 +117,20 @@ export function useOrders() {
         history: newHistory
       });
 
-      // Create notification for status change
+      const isComplement = note?.startsWith('Complemento:');
+      const notificationType = isComplement ? 'note_added' : 'status_changed';
+      const notificationMessage = isComplement 
+        ? `Pedido #${order.orderNumber}: Novo complemento de ${city}: ${note.replace('Complemento: ', '')}`
+        : `Pedido #${order.orderNumber}: Status alterado para "${status}" por ${city}${note ? ` (${note})` : ''}`;
+
+      // Create notification for status change or complement
       await addDoc(collection(db, 'notifications'), {
-        type: 'status_changed',
+        type: notificationType,
         orderId: orderId,
         orderNumber: order.orderNumber,
         fromCity: order.originCity,
         toCity: order.destinationCity,
-        message: `Pedido #${order.orderNumber}: Status alterado para "${status}" por ${city}${note ? ` (${note})` : ''}`,
+        message: notificationMessage,
         timestamp: now,
         createdBy: city,
         readBy: [city],
