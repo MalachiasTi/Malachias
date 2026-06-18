@@ -57,14 +57,14 @@ export default function AdminView() {
 
   const stats = {
     total: orders.length,
-    completed: orders.filter(o => o.status === 'Concluído').length,
+    completed: orders.filter(o => o.status === 'Concluído' || o.status === 'Concluído Divergente').length,
     pending: orders.filter(o => o.status === 'Aguardando separação' || o.status === 'Em separação').length,
     divergence: orders.filter(o => o.status === 'Divergência').length
   };
 
   const filteredOrders = orders.filter(o => {
     if (filter === 'all') return true;
-    if (filter === 'completed') return o.status === 'Concluído';
+    if (filter === 'completed') return o.status === 'Concluído' || o.status === 'Concluído Divergente';
     if (filter === 'pending') return o.status === 'Aguardando separação' || o.status === 'Em separação';
     if (filter === 'divergence') return o.status === 'Divergência';
     return true;
@@ -458,7 +458,7 @@ export default function AdminView() {
                       <TableCell className="font-medium text-slate-600 text-xs">
                         <div className="flex items-center gap-2">
                           {order.priority}
-                          {order.status !== 'Concluído' && (Date.now() - order.updatedAt > 14400000) && (
+                          {order.status !== 'Concluído' && order.status !== 'Concluído Divergente' && (Date.now() - order.updatedAt > 14400000) && (
                             <Badge variant="destructive" className="animate-pulse text-[9px] px-1 h-3.5">ATRASADO</Badge>
                           )}
                         </div>

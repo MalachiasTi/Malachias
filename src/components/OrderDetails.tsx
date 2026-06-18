@@ -91,6 +91,7 @@ export default function OrderDetails({ order, isOpen, onClose, onUpdate, onDelet
                       <SelectItem value="Em separação">Em separação</SelectItem>
                       <SelectItem value="Divergência">Divergência</SelectItem>
                       <SelectItem value="Concluído">Concluído</SelectItem>
+                      <SelectItem value="Concluído Divergente">Concluído Divergente</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

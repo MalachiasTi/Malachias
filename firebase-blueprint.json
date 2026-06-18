@@ -8,7 +8,7 @@
         "orderNumber": { "type": "string", "description": "Unique order identifier" },
         "originCity": { "type": "string", "description": "City requesting the parts" },
         "destinationCity": { "type": "string", "description": "City providing the parts" },
-        "status": { "type": "string", "enum": ["Aguardando separação", "Em separação", "Divergência", "Concluído"] },
+        "status": { "type": "string", "enum": ["Aguardando separação", "Em separação", "Divergência", "Concluído", "Concluído Divergente"] },
         "priority": { "type": "string", "enum": ["Baixa", "Normal", "Urgente"] },
         "observations": { "type": "string" },
         "createdAt": { "type": "number" },

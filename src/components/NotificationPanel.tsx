@@ -36,6 +36,7 @@ export default function NotificationPanel({
     switch (status) {
       case 'Em separação': return 'bg-amber-100 text-amber-600';
       case 'Concluído': return 'bg-emerald-100 text-emerald-600';
+      case 'Concluído Divergente': return 'bg-pink-100 text-pink-600';
       case 'Divergência': return 'bg-red-100 text-red-600';
       default: return 'bg-slate-100 text-slate-500';
     }

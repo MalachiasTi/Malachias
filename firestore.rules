@@ -29,7 +29,7 @@ service cloud.firestore {
       return data.orderNumber is string && data.orderNumber.size() > 0 && data.orderNumber.size() < 50 &&
              data.originCity is string &&
              data.destinationCity is string &&
-             data.status in ['Aguardando separação', 'Em separação', 'Divergência', 'Concluído'] &&
+             data.status in ['Aguardando separação', 'Em separação', 'Divergência', 'Concluído', 'Concluído Divergente'] &&
              data.priority in ['Baixa', 'Normal', 'Urgente'] &&
              data.createdAt is number &&
              data.updatedAt is number;

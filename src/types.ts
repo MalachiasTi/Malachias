@@ -3,7 +3,7 @@ export type City = 'Pirassununga' | 'Porto Ferreira' | 'Palmeiras' | 'Descalvado
 
 export type Role = 'Estoquista' | 'Administrador';
 
-export type OrderStatus = 'Aguardando separação' | 'Em separação' | 'Divergência' | 'Concluído';
+export type OrderStatus = 'Aguardando separação' | 'Em separação' | 'Divergência' | 'Concluído' | 'Concluído Divergente';
 
 export type Priority = 'Baixa' | 'Normal' | 'Urgente';
 
