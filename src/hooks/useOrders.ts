@@ -140,7 +140,8 @@ export function useOrders() {
       toast.success(`Status atualizado: ${status}`);
     } catch (error) {
       console.error("Error updating order:", error);
-      toast.error("Erro ao atualizar status.");
+      const errMsg = error instanceof Error ? error.message : "Erro desconhecido";
+      toast.error(`Erro ao atualizar status: ${errMsg}`);
     }
   };
 

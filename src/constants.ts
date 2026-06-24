@@ -27,7 +27,8 @@ export const STATUS_COLORS: Record<OrderStatus, string> = {
   'Em separação': 'bg-yellow-500',
   'Divergência': 'bg-red-500',
   'Concluído': 'bg-green-500',
-  'Concluído Divergente': 'bg-pink-500'
+  'Concluído Divergente': 'bg-pink-500',
+  'Concluido Divergente': 'bg-pink-500'
 };
 
 export const PRIORITY_COLORS: Record<Priority, string> = {

@@ -15,15 +15,18 @@ import EstoquistaView from './components/EstoquistaView';
 import AdminView from './components/AdminView';
 import { CITY_COLORS } from './constants';
 import { useAdminSettings } from './hooks/useAdminSettings';
+import { useCityPasswords } from './hooks/useCityPasswords';
 import { requestNotificationPermission } from './lib/notifications';
 
 export default function App() {
   const [session, setSession] = useState<UserSession | null>(null);
   const [selectedCity, setSelectedCity] = useState<City | ''>('');
   const [selectedRole, setSelectedRole] = useState<Role | ''>('');
+  const [cityPasswordInput, setCityPasswordInput] = useState('');
   const [isAdminConfirming, setIsAdminConfirming] = useState(false);
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const { adminPassword } = useAdminSettings();
+  const { verifyPassword } = useCityPasswords();
 
   useEffect(() => {
     if (selectedRole === 'Administrador' && selectedCity !== 'Pirassununga' && selectedCity !== '') {
@@ -49,6 +52,11 @@ export default function App() {
         return;
       }
       setIsAdminConfirming(true);
+      return;
+    }
+
+    if (!verifyPassword(selectedCity, cityPasswordInput)) {
+      toast.error(`Senha incorreta para a cidade de ${selectedCity}.`);
       return;
     }
 
@@ -80,6 +88,7 @@ export default function App() {
     setSession(null);
     setSelectedCity('');
     setSelectedRole('');
+    setCityPasswordInput('');
     toast.info('Sessão encerrada.');
   };
 
@@ -103,7 +112,7 @@ export default function App() {
             <CardContent className="space-y-6 flex flex-col items-center">
               <div className="space-y-2 w-full text-center">
                 <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Cidade</label>
-                <Select value={selectedCity} onValueChange={(v) => setSelectedCity(v as City)}>
+                <Select value={selectedCity} onValueChange={(v) => { setSelectedCity(v as City); setCityPasswordInput(''); }}>
                   <SelectTrigger className="w-full justify-center text-center">
                     <SelectValue placeholder="Selecione a cidade" />
                   </SelectTrigger>
@@ -140,6 +149,27 @@ export default function App() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {selectedCity && selectedRole !== 'Administrador' && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="space-y-2 w-full text-center"
+                >
+                  <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Senha da Cidade</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input 
+                      type="password"
+                      placeholder="Senha de acesso da cidade"
+                      className="pl-9 text-center bg-white"
+                      value={cityPasswordInput}
+                      onChange={(e) => setCityPasswordInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                    />
+                  </div>
+                </motion.div>
+              )}
             </CardContent>
             <CardFooter>
               <Button 

@@ -26,6 +26,7 @@ import * as XLSX from 'xlsx';
 import { useOrders } from '../hooks/useOrders';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAdminSettings } from '../hooks/useAdminSettings';
+import { useCityPasswords } from '../hooks/useCityPasswords';
 import OrderDetails from './OrderDetails';
 import NotificationPanel from './NotificationPanel';
 import { Input } from './ui/input';
@@ -37,6 +38,7 @@ export default function AdminView() {
   const { orders, updateOrderStatus, clearDailyOrders, deleteOrder, deleteOrders } = useOrders();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications(currentCity);
   const { adminPassword, updatePassword } = useAdminSettings();
+  const { passwords: cityPasswords, updateCityPassword } = useCityPasswords();
   
   const cityColor = CITY_COLORS[currentCity];
   
@@ -47,6 +49,14 @@ export default function AdminView() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [cityPassInputs, setCityPassInputs] = useState<Record<string, string>>({});
+  const [showCityPass, setShowCityPass] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (cityPasswords) {
+      setCityPassInputs(cityPasswords);
+    }
+  }, [cityPasswords]);
   
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -57,14 +67,14 @@ export default function AdminView() {
 
   const stats = {
     total: orders.length,
-    completed: orders.filter(o => o.status === 'Concluído' || o.status === 'Concluído Divergente').length,
+    completed: orders.filter(o => o.status === 'Concluído' || o.status === 'Concluído Divergente' || o.status === 'Concluido Divergente').length,
     pending: orders.filter(o => o.status === 'Aguardando separação' || o.status === 'Em separação').length,
     divergence: orders.filter(o => o.status === 'Divergência').length
   };
 
   const filteredOrders = orders.filter(o => {
     if (filter === 'all') return true;
-    if (filter === 'completed') return o.status === 'Concluído' || o.status === 'Concluído Divergente';
+    if (filter === 'completed') return o.status === 'Concluído' || o.status === 'Concluído Divergente' || o.status === 'Concluido Divergente';
     if (filter === 'pending') return o.status === 'Aguardando separação' || o.status === 'Em separação';
     if (filter === 'divergence') return o.status === 'Divergência';
     return true;
@@ -276,40 +286,96 @@ export default function AdminView() {
                     </Button>
                   }
                 />
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <Lock className={`w-5 h-5 ${cityColor.text}`} />
-                      Alterar Senha ADM
+                      Configurações de Acesso e Senhas
                     </DialogTitle>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">Nova Senha</Label>
-                      <div className="relative">
-                        <Input
-                          id="new-password"
-                          type={showPassword ? "text" : "password"}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Digite a nova senha"
-                          className="pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4 text-slate-400" /> : <Eye className="h-4 w-4 text-slate-400" />}
-                        </Button>
+                  <div className="space-y-6 py-2">
+                    <div className="space-y-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Senha Administrador</h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password" className="text-xs text-slate-600">Nova Senha ADM</Label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              id="new-password"
+                              type={showPassword ? "text" : "password"}
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="Digite a nova senha ADM"
+                              className="pr-10 h-9 text-xs bg-white"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-1 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-3.5 w-3.5 text-slate-400" /> : <Eye className="h-3.5 w-3.5 text-slate-400" />}
+                            </Button>
+                          </div>
+                          <Button onClick={handleChangePassword} size="sm" className={`${cityColor.primary} hover:opacity-90 h-9 text-xs px-3 font-bold text-white`}>
+                            Salvar ADM
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Senhas por Cidade (Estoquistas)</h4>
+                        <span className="text-[10px] text-slate-400 font-medium">Padrão inicial: 123456</span>
+                      </div>
+                      <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                        {CITIES.map(city => (
+                          <div key={city} className="flex items-center justify-between gap-2 bg-slate-50 p-2 rounded border border-slate-100">
+                            <div className="flex items-center gap-2 w-32 flex-shrink-0">
+                              <div className={`w-2.5 h-2.5 rounded-full ${CITY_COLORS[city].primary}`} />
+                              <span className="text-xs font-bold text-slate-700 truncate" title={city}>{city}</span>
+                            </div>
+                            <div className="flex gap-1.5 flex-1 max-w-[240px]">
+                              <div className="relative flex-1">
+                                <Input
+                                  type={showCityPass[city] ? "text" : "password"}
+                                  value={cityPassInputs[city] ?? ''}
+                                  onChange={(e) => setCityPassInputs({ ...cityPassInputs, [city]: e.target.value })}
+                                  placeholder="Senha"
+                                  className="pr-8 h-8 text-xs bg-white"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute right-0 top-0 h-full px-2 hover:bg-transparent"
+                                  onClick={() => setShowCityPass({ ...showCityPass, [city]: !showCityPass[city] })}
+                                >
+                                  {showCityPass[city] ? <EyeOff className="h-3 w-3 text-slate-400" /> : <Eye className="h-3 w-3 text-slate-400" />}
+                                </Button>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs px-2.5 font-bold border-slate-300 hover:bg-slate-200 text-slate-700"
+                                onClick={async () => {
+                                  const val = cityPassInputs[city]?.trim() || '123456';
+                                  await updateCityPassword(city, val);
+                                }}
+                              >
+                                Salvar
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button onClick={handleChangePassword} className={`${cityColor.primary} hover:opacity-90`}>
-                      Salvar Nova Senha
+                  <DialogFooter className="pt-2 border-t border-slate-100">
+                    <Button variant="outline" onClick={() => setIsSettingsOpen(false)} className="w-full text-xs font-bold">
+                      Concluir
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -458,7 +524,7 @@ export default function AdminView() {
                       <TableCell className="font-medium text-slate-600 text-xs">
                         <div className="flex items-center gap-2">
                           {order.priority}
-                          {order.status !== 'Concluído' && order.status !== 'Concluído Divergente' && (Date.now() - order.updatedAt > 14400000) && (
+                          {order.status !== 'Concluído' && order.status !== 'Concluído Divergente' && order.status !== 'Concluido Divergente' && (Date.now() - order.updatedAt > 14400000) && (
                             <Badge variant="destructive" className="animate-pulse text-[9px] px-1 h-3.5">ATRASADO</Badge>
                           )}
                         </div>
