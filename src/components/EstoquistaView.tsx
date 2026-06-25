@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { City, Order, OrderStatus, Priority } from '../types';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -17,7 +17,8 @@ import {
   Clock, 
   AlertCircle, 
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Calendar
 } from 'lucide-react';
 import { CITIES, STATUS_COLORS, PRIORITY_COLORS } from '../constants';
 import { toast } from 'sonner';
@@ -41,6 +42,8 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
   const { orders, createOrder, updateOrderStatus } = useOrders();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications(currentCity);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const dateInputRef = useRef<HTMLInputElement>(null);
   
   const cityColor = CITY_COLORS[currentCity];
 
@@ -124,8 +127,14 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
     }
   };
 
-  const sentOrders = orders.filter(o => o.originCity === currentCity);
-  const receivedOrders = orders.filter(o => o.destinationCity === currentCity);
+  const selectedDateStr = new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR');
+  const dateFilteredOrders = orders.filter(o => {
+    if (!o.createdAt) return true;
+    return new Date(o.createdAt).toLocaleDateString('pt-BR') === selectedDateStr;
+  });
+
+  const sentOrders = dateFilteredOrders.filter(o => o.originCity === currentCity);
+  const receivedOrders = dateFilteredOrders.filter(o => o.destinationCity === currentCity);
 
   return (
     <div className="space-y-6">
@@ -255,7 +264,44 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
                     Enviados ({sentOrders.length})
                   </TabsTrigger>
                 </TabsList>
-                <CardTitle className="text-xl font-bold text-slate-900 tracking-tight">Gerenciamento de Pedidos</CardTitle>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-slate-500" />
+                    Gerenciamento de Pedidos
+                  </CardTitle>
+                  <div 
+                    onClick={() => {
+                      try {
+                        dateInputRef.current?.showPicker();
+                      } catch (e) {
+                        dateInputRef.current?.focus();
+                      }
+                    }}
+                    className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-slate-300 hover:shadow transition-all group select-none"
+                    title="Clique para abrir o calendário"
+                  >
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Data:</span>
+                    <input 
+                      ref={dateInputRef}
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs font-bold text-slate-800 bg-transparent border-none outline-none cursor-pointer focus:ring-0 p-0"
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDate(new Date().toISOString().split('T')[0]);
+                      }}
+                      className="h-6 text-[10px] px-2 font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 ml-1"
+                    >
+                      Hoje
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <TabsContent value="received" className="m-0">

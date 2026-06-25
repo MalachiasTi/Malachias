@@ -158,7 +158,7 @@ export default function App() {
                 >
                   <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Senha da Cidade</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input 
                       type="password"
                       placeholder="Senha de acesso da cidade"

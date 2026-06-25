@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Order, City, OrderStatus } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -17,7 +17,8 @@ import {
   Settings,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Calendar
 } from 'lucide-react';
 import { STATUS_COLORS, CITIES, CITY_COLORS } from '../constants';
 import { toast } from 'sonner';
@@ -62,17 +63,26 @@ export default function AdminView() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
   const [exportDate, setExportDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const historyDateInputRef = useRef<HTMLInputElement>(null);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [clearPasswordInput, setClearPasswordInput] = useState('');
 
+  const historyFilteredOrders = orders.filter(o => {
+    if (!historyDate) return true;
+    if (!o.createdAt) return true;
+    const selectedDateStr = new Date(historyDate + 'T00:00:00').toLocaleDateString('pt-BR');
+    return new Date(o.createdAt).toLocaleDateString('pt-BR') === selectedDateStr;
+  });
+
   const stats = {
-    total: orders.length,
-    completed: orders.filter(o => o.status === 'Concluído' || o.status === 'Concluído Divergente' || o.status === 'Concluido Divergente').length,
-    pending: orders.filter(o => o.status === 'Aguardando separação' || o.status === 'Em separação').length,
-    divergence: orders.filter(o => o.status === 'Divergência').length
+    total: historyFilteredOrders.length,
+    completed: historyFilteredOrders.filter(o => o.status === 'Concluído' || o.status === 'Concluído Divergente' || o.status === 'Concluido Divergente').length,
+    pending: historyFilteredOrders.filter(o => o.status === 'Aguardando separação' || o.status === 'Em separação').length,
+    divergence: historyFilteredOrders.filter(o => o.status === 'Divergência').length
   };
 
-  const filteredOrders = orders.filter(o => {
+  const filteredOrders = historyFilteredOrders.filter(o => {
     if (filter === 'all') return true;
     if (filter === 'completed') return o.status === 'Concluído' || o.status === 'Concluído Divergente' || o.status === 'Concluido Divergente';
     if (filter === 'pending') return o.status === 'Aguardando separação' || o.status === 'Em separação';
@@ -463,8 +473,9 @@ export default function AdminView() {
         </div>
 
         <div className="space-y-6 w-full">
-          <div className="flex flex-wrap gap-4 justify-between items-center w-full">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-slate-500" />
               Histórico Geral de Operações 
               {filter !== 'all' && (
                 <span className="ml-2 text-sm font-medium text-slate-400">
@@ -472,6 +483,50 @@ export default function AdminView() {
                 </span>
               )}
             </h2>
+            <div 
+              onClick={() => {
+                try {
+                  historyDateInputRef.current?.showPicker();
+                } catch (e) {
+                  historyDateInputRef.current?.focus();
+                }
+              }}
+              className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:border-slate-300 hover:shadow transition-all group select-none flex-shrink-0"
+              title="Clique para abrir o calendário"
+            >
+              <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Data:</span>
+              <input 
+                ref={historyDateInputRef}
+                type="date"
+                value={historyDate}
+                onChange={(e) => setHistoryDate(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs font-bold text-slate-800 bg-transparent border-none outline-none cursor-pointer focus:ring-0 p-0"
+              />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setHistoryDate(new Date().toISOString().split('T')[0]);
+                }}
+                className="h-6 text-[10px] px-2 font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 ml-1"
+              >
+                Hoje
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setHistoryDate('');
+                }}
+                className={`h-6 text-[10px] px-2 font-bold ml-0.5 ${!historyDate ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+                title="Mostrar histórico de todas as datas"
+              >
+                Todos
+              </Button>
+            </div>
           </div>
 
           <Card className="border-none shadow-xl overflow-hidden w-full">
