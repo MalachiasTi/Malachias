@@ -8,54 +8,92 @@ interface CityPasswordsData {
   passwords?: Record<string, string>;
 }
 
-export function useCityPasswords() {
-  const [passwords, setPasswords] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
+const CACHE_PASSWORDS_KEY = 'app_city_passwords_v1';
+
+function getInitialPasswords(): Record<string, string> {
+  const initial: Record<string, string> = {};
+  CITIES.forEach(city => {
+    initial[city] = '123456';
+  });
+
+  try {
+    const raw = localStorage.getItem(CACHE_PASSWORDS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return { ...initial, ...parsed };
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to load cached city passwords:", e);
+  }
+  return initial;
+}
+
+function savePasswordsToCache(passwords: Record<string, string>) {
+  try {
+    localStorage.setItem(CACHE_PASSWORDS_KEY, JSON.stringify(passwords));
+  } catch (e) {
+    console.warn("Failed to save city passwords to cache:", e);
+  }
+}
+
+export function useCityPasswords(enabled = true) {
+  const [passwords, setPasswords] = useState<Record<string, string>>(() => getInitialPasswords());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const docRef = doc(db, 'settings', 'city_passwords');
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as CityPasswordsData;
-        const fetched = data.passwords || {};
-        // Garantir valor padrão '123456' para cidades que ainda não tenham senha definida
-        const merged: Record<string, string> = {};
-        CITIES.forEach(city => {
-          merged[city] = fetched[city] || '123456';
-        });
-        setPasswords(merged);
-      } else {
-        // Se o documento não existir, todas usam '123456'
-        const initial: Record<string, string> = {};
-        CITIES.forEach(city => {
-          initial[city] = '123456';
-        });
-        setPasswords(initial);
-      }
-      setLoading(false);
-    }, (err) => {
-      console.error("Erro ao carregar senhas das cidades:", err);
-      // Fallback
-      const initial: Record<string, string> = {};
-      CITIES.forEach(city => {
-        initial[city] = '123456';
+    if (!enabled) return;
+    let unsubscribe = () => {};
+    try {
+      const docRef = doc(db, 'settings', 'city_passwords');
+      unsubscribe = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data() as CityPasswordsData;
+          const fetched = data.passwords || {};
+          const merged: Record<string, string> = {};
+          CITIES.forEach(city => {
+            merged[city] = fetched[city] || '123456';
+          });
+          savePasswordsToCache(merged);
+          setPasswords(merged);
+        } else {
+          const initial = getInitialPasswords();
+          setPasswords(initial);
+        }
+        setLoading(false);
+      }, (err) => {
+        console.warn("Aviso ao carregar senhas remotas (contingência local ativa):", err);
+        const fallback = getInitialPasswords();
+        setPasswords(fallback);
+        setLoading(false);
       });
-      setPasswords(initial);
+    } catch (err) {
+      console.warn("Erro ao configurar listener de senhas:", err);
+      setPasswords(getInitialPasswords());
       setLoading(false);
-    });
+    }
 
     return () => unsubscribe();
   }, []);
 
   const updateCityPassword = async (city: string, newPassword: string) => {
     try {
-      const docRef = doc(db, 'settings', 'city_passwords');
       const updated = { ...passwords, [city]: newPassword };
-      await setDoc(docRef, { passwords: updated }, { merge: true });
+      savePasswordsToCache(updated);
+      setPasswords(updated);
+
+      try {
+        const docRef = doc(db, 'settings', 'city_passwords');
+        await setDoc(docRef, { passwords: updated }, { merge: true });
+      } catch (remoteErr) {
+        console.warn("Aviso: Falha ao salvar senha no servidor remoto, mantida localmente:", remoteErr);
+      }
+
       toast.success(`Senha de ${city} atualizada com sucesso!`);
       return true;
     } catch (error) {
-      console.error("Erro ao atualizar senha:", error);
+      console.warn("Erro ao atualizar senha:", error);
       toast.error("Erro ao atualizar a senha da cidade.");
       return false;
     }

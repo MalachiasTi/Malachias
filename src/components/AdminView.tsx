@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Order, City, OrderStatus } from '../types';
+import { Order, City, OrderStatus, Priority } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
@@ -18,9 +18,10 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Calendar
+  Calendar,
+  PlusCircle
 } from 'lucide-react';
-import { STATUS_COLORS, CITIES, CITY_COLORS } from '../constants';
+import { STATUS_COLORS, CITIES, CITY_COLORS, PRIORITY_COLORS } from '../constants';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
@@ -33,10 +34,11 @@ import NotificationPanel from './NotificationPanel';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 export default function AdminView() {
   const currentCity: City = 'Pirassununga';
-  const { orders, updateOrderStatus, clearDailyOrders, deleteOrder, deleteOrders } = useOrders();
+  const { orders, createOrder, updateOrderStatus, clearDailyOrders, deleteOrder, deleteOrders } = useOrders();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications(currentCity);
   const { adminPassword, updatePassword } = useAdminSettings();
   const { passwords: cityPasswords, updateCityPassword } = useCityPasswords();
@@ -47,6 +49,16 @@ export default function AdminView() {
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending' | 'divergence'>('all');
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   
+  const [isAdminCreateOpen, setIsAdminCreateOpen] = useState(false);
+  const [adminNewOrder, setAdminNewOrder] = useState({
+    orderNumber: '',
+    originCity: 'Pirassununga' as City,
+    destinationCity: '' as City | '',
+    priority: 'Normal' as Priority,
+    observations: ''
+  });
+  const [isAdminSubmitting, setIsAdminSubmitting] = useState(false);
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -194,6 +206,43 @@ export default function AdminView() {
     setSelectedOrder(null);
   };
 
+  const handleAdminCreateOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedNumber = adminNewOrder.orderNumber.trim();
+    if (!trimmedNumber || !adminNewOrder.destinationCity) {
+      toast.error('Preencha o Número do Pedido e a Cidade Destino.');
+      return;
+    }
+
+    if (isAdminSubmitting) return;
+    setIsAdminSubmitting(true);
+    try {
+      const success = await createOrder({
+        orderNumber: trimmedNumber,
+        originCity: adminNewOrder.originCity,
+        destinationCity: adminNewOrder.destinationCity as City,
+        priority: adminNewOrder.priority,
+        observations: adminNewOrder.observations || ''
+      });
+
+      if (success) {
+        setAdminNewOrder({
+          orderNumber: '',
+          originCity: 'Pirassununga',
+          destinationCity: '',
+          priority: 'Normal',
+          observations: ''
+        });
+        setIsAdminCreateOpen(false);
+      }
+    } catch (err) {
+      console.warn("Erro ao criar pedido pelo painel admin:", err);
+      toast.error("Erro ao criar pedido.");
+    } finally {
+      setIsAdminSubmitting(false);
+    }
+  };
+
   const handleSelectOrderFromNotification = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (order) {
@@ -287,6 +336,14 @@ export default function AdminView() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <Button 
+                onClick={() => setIsAdminCreateOpen(true)}
+                className={`w-full flex items-center justify-start gap-2 font-bold ${cityColor.primary} text-white hover:opacity-90 shadow-sm`}
+              >
+                <PlusCircle className="w-4 h-4" />
+                Novo Pedido (Enviar)
+              </Button>
+
               <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                 <DialogTrigger
                   render={
@@ -717,6 +774,112 @@ export default function AdminView() {
               Excluir Selecionados
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Novo Pedido (Admin) */}
+      <Dialog open={isAdminCreateOpen} onOpenChange={setIsAdminCreateOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PlusCircle className={`w-5 h-5 ${cityColor.text}`} />
+              Novo Pedido - {adminNewOrder.originCity}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAdminCreateOrder} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="admin-order-number" className="text-xs font-bold text-slate-700">Número do Pedido</Label>
+              <Input 
+                id="admin-order-number" 
+                placeholder="Ex: 12345" 
+                value={adminNewOrder.orderNumber}
+                onChange={e => setAdminNewOrder({ ...adminNewOrder, orderNumber: e.target.value })}
+                className="bg-white"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="admin-origin-city" className="text-xs font-bold text-slate-700">Origem</Label>
+                <Select 
+                  value={adminNewOrder.originCity} 
+                  onValueChange={v => setAdminNewOrder({ ...adminNewOrder, originCity: v as City, destinationCity: adminNewOrder.destinationCity === v ? '' : adminNewOrder.destinationCity })}
+                >
+                  <SelectTrigger id="admin-origin-city">
+                    <SelectValue placeholder="Origem" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CITIES.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="admin-dest-city" className="text-xs font-bold text-slate-700">Destino</Label>
+                <Select 
+                  value={adminNewOrder.destinationCity} 
+                  onValueChange={v => setAdminNewOrder({ ...adminNewOrder, destinationCity: v as City })}
+                >
+                  <SelectTrigger id="admin-dest-city">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CITIES.filter(c => c !== adminNewOrder.originCity).map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admin-priority" className="text-xs font-bold text-slate-700">Prioridade</Label>
+              <Select 
+                value={adminNewOrder.priority} 
+                onValueChange={v => setAdminNewOrder({ ...adminNewOrder, priority: v as Priority })}
+              >
+                <SelectTrigger id="admin-priority">
+                  <SelectValue placeholder="Prioridade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Baixa">Baixa</SelectItem>
+                  <SelectItem value="Normal">Normal</SelectItem>
+                  <SelectItem value="Urgente">Urgente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admin-obs" className="text-xs font-bold text-slate-700">Observações (Opcional)</Label>
+              <Input 
+                id="admin-obs" 
+                placeholder="Ex: Peça frágil, cliente aguardando no balcão" 
+                value={adminNewOrder.observations}
+                onChange={e => setAdminNewOrder({ ...adminNewOrder, observations: e.target.value })}
+                className="bg-white"
+              />
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsAdminCreateOpen(false)}
+                disabled={isAdminSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                className={`${cityColor.primary} text-white hover:opacity-90 font-bold`}
+                disabled={isAdminSubmitting}
+              >
+                {isAdminSubmitting ? 'Enviando...' : 'Criar e Enviar Pedido'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

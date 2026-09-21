@@ -63,13 +63,14 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newOrder.orderNumber || !newOrder.destinationCity) {
-      toast.error('Preencha os campos obrigatórios.');
+    const trimmedNumber = newOrder.orderNumber.trim();
+    if (!trimmedNumber || !newOrder.destinationCity) {
+      toast.error('Preencha os campos obrigatórios (Número e Cidade Destino).');
       return;
     }
 
-    if (orders.some(o => o.orderNumber === newOrder.orderNumber)) {
-      toast.error('Número de pedido já existe.');
+    if (orders.some(o => o.orderNumber && o.orderNumber.trim() === trimmedNumber)) {
+      toast.error(`O pedido #${trimmedNumber} já existe no sistema.`);
       return;
     }
 
@@ -79,18 +80,26 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
   const confirmCreateOrder = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    const success = await createOrder({
-      orderNumber: newOrder.orderNumber,
-      originCity: currentCity,
-      destinationCity: newOrder.destinationCity as City,
-      priority: newOrder.priority,
-      observations: newOrder.observations
-    });
-    
-    setIsSubmitting(false);
-    if (success) {
-      setNewOrder({ orderNumber: '', destinationCity: '', priority: 'Normal', observations: '' });
-      setIsConfirming(false);
+    try {
+      const trimmedNumber = newOrder.orderNumber.trim();
+      const success = await createOrder({
+        orderNumber: trimmedNumber,
+        originCity: currentCity,
+        destinationCity: newOrder.destinationCity as City,
+        priority: newOrder.priority,
+        observations: newOrder.observations || ''
+      });
+      
+      if (success) {
+        setNewOrder({ orderNumber: '', destinationCity: '', priority: 'Normal', observations: '' });
+        setIsConfirming(false);
+        setSelectedDate(new Date().toISOString().split('T')[0]);
+      }
+    } catch (err) {
+      console.warn("Erro ao submeter pedido:", err);
+      toast.error("Ocorreu um erro ao enviar o pedido. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -127,9 +136,10 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
     }
   };
 
-  const selectedDateStr = new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR');
   const dateFilteredOrders = orders.filter(o => {
+    if (!selectedDate) return true;
     if (!o.createdAt) return true;
+    const selectedDateStr = new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR');
     return new Date(o.createdAt).toLocaleDateString('pt-BR') === selectedDateStr;
   });
 
@@ -296,9 +306,21 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
                         e.stopPropagation();
                         setSelectedDate(new Date().toISOString().split('T')[0]);
                       }}
-                      className="h-6 text-[10px] px-2 font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 ml-1"
+                      className={`h-6 text-[10px] px-2 font-bold ${selectedDate === new Date().toISOString().split('T')[0] ? 'bg-slate-200 text-slate-900 font-extrabold' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'} ml-1`}
                     >
                       Hoje
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDate('');
+                      }}
+                      className={`h-6 text-[10px] px-2 font-bold ml-1 ${!selectedDate ? 'bg-blue-600 text-white hover:bg-blue-700 font-extrabold' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
+                      title="Mostrar pedidos de todas as datas"
+                    >
+                      Todos
                     </Button>
                   </div>
                 </div>

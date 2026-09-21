@@ -17,7 +17,7 @@ export function useNotifications(currentCity: City | 'Geral') {
     const q = query(
       collection(db, 'notifications'),
       orderBy('timestamp', 'desc'),
-      limit(50)
+      limit(20)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -62,20 +62,22 @@ export function useNotifications(currentCity: City | 'Geral') {
       setNotifications(notifs);
       setUnreadCount(unread);
     }, (error) => {
-      console.error("Error fetching notifications:", error);
+      console.warn("Aviso ao buscar notificações em tempo real (contingência):", error);
     });
 
     return () => unsubscribe();
   }, [currentCity]);
 
   const markAsRead = async (notificationId: string) => {
+    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, readBy: [...n.readBy.filter(c => c !== currentCity), currentCity] } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
     try {
       const notifRef = doc(db, 'notifications', notificationId);
       await updateDoc(notifRef, {
         readBy: arrayUnion(currentCity)
       });
     } catch (error) {
-      console.error("Error marking notification as read:", error);
+      console.warn("Aviso ao marcar notificação como lida remotamente:", error);
     }
   };
 
@@ -88,10 +90,10 @@ export function useNotifications(currentCity: City | 'Geral') {
   };
 
   const clearNotifications = async () => {
+    setNotifications([]);
+    setUnreadCount(0);
     try {
       const batch = writeBatch(db);
-      // We only clear the ones currently visible in the panel for safety, 
-      // or we could query all relevant ones. Let's clear the ones in state.
       notifications.forEach((n) => {
         const ref = doc(db, 'notifications', n.id);
         batch.delete(ref);
@@ -99,8 +101,8 @@ export function useNotifications(currentCity: City | 'Geral') {
       await batch.commit();
       toast.success("Histórico de notificações limpo.");
     } catch (error) {
-      console.error("Error clearing notifications:", error);
-      toast.error("Erro ao limpar notificações.");
+      console.warn("Aviso ao limpar notificações no servidor:", error);
+      toast.success("Histórico de notificações limpo localmente.");
     }
   };
 

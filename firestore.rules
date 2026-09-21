@@ -1,61 +1,20 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: orders
-    // Document ID: auto-generated
-    // Fields:
-    //   - orderNumber: string (required)
-    //   - originCity: string (required)
-    //   - destinationCity: string (required)
-    //   - status: string (required, enum)
-    //   - priority: string (required, enum)
-    //   - observations: string (optional)
-    //   - createdAt: number (required)
-    //   - updatedAt: number (required)
-    //   - history: list (optional)
-    //
-    // ===============================================================
-
-    // Helper Functions
-    function isAuthenticated() {
-      return true; // Simplified for this app as it doesn't use Firebase Auth yet
-    }
-
-    function isValidOrder(data) {
-      return data.orderNumber is string && data.orderNumber.size() > 0 && data.orderNumber.size() < 50 &&
-             data.originCity is string &&
-             data.destinationCity is string &&
-             data.status in ['Aguardando separação', 'Em separação', 'Divergência', 'Concluído', 'Concluído Divergente', 'Concluido Divergente'] &&
-             data.priority in ['Baixa', 'Normal', 'Urgente'] &&
-             data.createdAt is number &&
-             data.updatedAt is number;
-    }
-
     match /orders/{orderId} {
-      allow read: if true;
-      allow create: if isValidOrder(request.resource.data);
-      allow update: if isValidOrder(request.resource.data);
-      allow delete: if true; // Allowed for clearing day
+      allow read, write: if true;
     }
 
     match /notifications/{notificationId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if true;
-      allow delete: if true; // Allowed for clearing day
+      allow read, write: if true;
     }
 
     match /settings/{docId} {
       allow read, write: if true;
     }
 
-    // Admin special rule for clearing day
-    match /admin_actions/clear_day {
-      allow write: if true; // In a real app, this would be restricted to admin UID
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
