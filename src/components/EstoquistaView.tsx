@@ -148,7 +148,7 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.6fr_1.2fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)_300px] xl:grid-cols-[320px_minmax(0,1fr)_320px] gap-6 items-start">
         <div className="space-y-6">
           <Card className={`border-t-4 ${cityColor.border.replace('border-', 'border-t-')}`}>
             <CardHeader>
@@ -327,89 +327,93 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
               </CardHeader>
               <CardContent className="p-0">
                 <TabsContent value="received" className="m-0">
-                  <Table>
-                    <TableHeader className="bg-slate-50/50">
-                      <TableRow className="hover:bg-transparent border-b">
-                        <TableHead className="font-bold text-slate-900 py-3 pl-6">Pedido</TableHead>
-                        <TableHead className="font-bold text-slate-900 py-3">Origem</TableHead>
-                        <TableHead className="font-bold text-slate-900 py-3">Prioridade</TableHead>
-                        <TableHead className="font-bold text-slate-900 py-3">Status</TableHead>
-                        <TableHead className="font-bold text-slate-900 py-3 pr-6">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {receivedOrders.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-10 text-slate-400 font-medium text-sm">
-                            Nenhum pedido recebido no momento.
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-slate-50/50">
+                        <TableRow className="hover:bg-transparent border-b">
+                          <TableHead className="font-bold text-slate-900 py-3.5 pl-6 whitespace-nowrap">Pedido</TableHead>
+                          <TableHead className="font-bold text-slate-900 py-3.5 whitespace-nowrap">Origem</TableHead>
+                          <TableHead className="font-bold text-slate-900 py-3.5 whitespace-nowrap">Prioridade</TableHead>
+                          <TableHead className="font-bold text-slate-900 py-3.5 whitespace-nowrap">Status</TableHead>
+                          <TableHead className="font-bold text-slate-900 py-3.5 pr-6 whitespace-nowrap text-right">Ações</TableHead>
                         </TableRow>
-                      ) : (
-                        receivedOrders.map(order => (
-                          <TableRow key={order.id} className="hover:bg-slate-50/50 transition-colors border-b last:border-0">
-                            <TableCell className="font-bold text-slate-900 pl-6">#{order.orderNumber}</TableCell>
-                            <TableCell className="font-medium text-slate-600 text-sm">{order.originCity}</TableCell>
-                            <TableCell>
-                              <Badge className={`${PRIORITY_COLORS[order.priority]} border-0 font-bold px-2 py-0.5 rounded-lg text-[10px]`}>
-                                {order.priority}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={`${STATUS_COLORS[order.status]} text-white border-0 px-2 py-0.5 rounded-lg font-bold shadow-sm text-[10px]`}>
-                                {order.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="pr-6">
-                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-2 text-xs`}>Ver Detalhes</Button>
+                      </TableHeader>
+                      <TableBody>
+                        {receivedOrders.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-12 text-slate-400 font-medium text-sm">
+                              Nenhum pedido recebido no momento.
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          receivedOrders.map(order => (
+                            <TableRow key={order.id} className="hover:bg-slate-50/50 transition-colors border-b last:border-0">
+                              <TableCell className="font-bold text-slate-900 pl-6 whitespace-nowrap">#{order.orderNumber}</TableCell>
+                              <TableCell className="font-medium text-slate-700 text-sm whitespace-nowrap">{order.originCity}</TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                <Badge className={`${PRIORITY_COLORS[order.priority]} border-0 font-bold px-2.5 py-1 rounded-lg text-[10px]`}>
+                                  {order.priority}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                <Badge className={`${STATUS_COLORS[order.status]} text-white border-0 px-2.5 py-1 rounded-lg font-bold shadow-sm text-[10px]`}>
+                                  {order.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="pr-6 whitespace-nowrap text-right">
+                                <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-3 text-xs`}>Ver Detalhes</Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="sent" className="m-0">
-                  <Table>
-                    <TableHeader className="bg-slate-50/50">
-                      <TableRow className="hover:bg-transparent border-b">
-                        <TableHead className="font-bold text-slate-900 py-3 pl-6">Pedido</TableHead>
-                        <TableHead className="font-bold text-slate-900 py-3">Destino</TableHead>
-                        <TableHead className="font-bold text-slate-900 py-3">Prioridade</TableHead>
-                        <TableHead className="font-bold text-slate-900 py-3">Status</TableHead>
-                        <TableHead className="font-bold text-slate-900 py-3 pr-6">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sentOrders.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-10 text-slate-400 font-medium text-sm">
-                            Nenhum pedido enviado no momento.
-                          </TableCell>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-slate-50/50">
+                        <TableRow className="hover:bg-transparent border-b">
+                          <TableHead className="font-bold text-slate-900 py-3.5 pl-6 whitespace-nowrap">Pedido</TableHead>
+                          <TableHead className="font-bold text-slate-900 py-3.5 whitespace-nowrap">Destino</TableHead>
+                          <TableHead className="font-bold text-slate-900 py-3.5 whitespace-nowrap">Prioridade</TableHead>
+                          <TableHead className="font-bold text-slate-900 py-3.5 whitespace-nowrap">Status</TableHead>
+                          <TableHead className="font-bold text-slate-900 py-3.5 pr-6 whitespace-nowrap text-right">Ações</TableHead>
                         </TableRow>
-                      ) : (
-                        sentOrders.map(order => (
-                          <TableRow key={order.id} className="hover:bg-slate-50/50 transition-colors border-b last:border-0">
-                            <TableCell className="font-bold text-slate-900 pl-6">#{order.orderNumber}</TableCell>
-                            <TableCell className="font-medium text-slate-600 text-sm">{order.destinationCity}</TableCell>
-                            <TableCell>
-                              <Badge className={`${PRIORITY_COLORS[order.priority]} border-0 font-bold px-2 py-0.5 rounded-lg text-[10px]`}>
-                                {order.priority}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={`${STATUS_COLORS[order.status]} text-white border-0 px-2 py-0.5 rounded-lg font-bold shadow-sm text-[10px]`}>
-                                {order.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="pr-6">
-                              <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-2 text-xs`}>Editar</Button>
+                      </TableHeader>
+                      <TableBody>
+                        {sentOrders.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-12 text-slate-400 font-medium text-sm">
+                              Nenhum pedido enviado no momento.
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          sentOrders.map(order => (
+                            <TableRow key={order.id} className="hover:bg-slate-50/50 transition-colors border-b last:border-0">
+                              <TableCell className="font-bold text-slate-900 pl-6 whitespace-nowrap">#{order.orderNumber}</TableCell>
+                              <TableCell className="font-medium text-slate-700 text-sm whitespace-nowrap">{order.destinationCity}</TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                <Badge className={`${PRIORITY_COLORS[order.priority]} border-0 font-bold px-2.5 py-1 rounded-lg text-[10px]`}>
+                                  {order.priority}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap">
+                                <Badge className={`${STATUS_COLORS[order.status]} text-white border-0 px-2.5 py-1 rounded-lg font-bold shadow-sm text-[10px]`}>
+                                  {order.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="pr-6 whitespace-nowrap text-right">
+                                <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className={`font-bold text-slate-600 hover:${cityColor.text} h-8 px-3 text-xs`}>Editar</Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </TabsContent>
               </CardContent>
             </Card>

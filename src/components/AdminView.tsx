@@ -326,7 +326,7 @@ export default function AdminView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.6fr_1.2fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[250px_minmax(0,1fr)_300px] xl:grid-cols-[270px_minmax(0,1fr)_320px] gap-6 items-start">
         <div className="space-y-6">
           <Card className={`border-t-4 ${cityColor.border.replace('border-', 'border-t-')}`}>
             <CardHeader>
@@ -588,7 +588,8 @@ export default function AdminView() {
 
           <Card className="border-none shadow-xl overflow-hidden w-full">
             <CardContent className="p-0">
-              <Table>
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-10 py-4 px-4">
@@ -668,8 +669,9 @@ export default function AdminView() {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
         </div>
 
         <div>

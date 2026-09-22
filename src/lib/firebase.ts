@@ -3,7 +3,7 @@ import {
   initializeFirestore, 
   getFirestore, 
   persistentLocalCache, 
-  persistentSingleTabManager 
+  persistentMultipleTabManager 
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -14,7 +14,7 @@ let firestoreInstance;
 try {
   firestoreInstance = initializeFirestore(app, {
     localCache: persistentLocalCache({
-      tabManager: persistentSingleTabManager({})
+      tabManager: persistentMultipleTabManager()
     })
   }, firebaseConfig.firestoreDatabaseId);
 } catch (e) {
