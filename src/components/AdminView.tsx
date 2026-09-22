@@ -75,7 +75,7 @@ export default function AdminView() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
   const [exportDate, setExportDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [historyDate, setHistoryDate] = useState<string>('');
   const historyDateInputRef = useRef<HTMLInputElement>(null);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [clearPasswordInput, setClearPasswordInput] = useState('');
@@ -567,7 +567,7 @@ export default function AdminView() {
                   e.stopPropagation();
                   setHistoryDate(new Date().toISOString().split('T')[0]);
                 }}
-                className="h-6 text-[10px] px-2 font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 ml-1"
+                className={`h-6 text-[10px] px-2 font-bold ml-1 ${historyDate === new Date().toISOString().split('T')[0] ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}`}
               >
                 Hoje
               </Button>
@@ -610,7 +610,30 @@ export default function AdminView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOrders.map(order => (
+                  {filteredOrders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-16 px-4 text-slate-500 font-medium text-sm">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <p className="text-slate-600 font-semibold text-base">
+                            {historyDate 
+                              ? `Nenhum pedido registrado para a data ${new Date(historyDate + 'T00:00:00').toLocaleDateString('pt-BR')}.`
+                              : "Nenhum pedido encontrado com os filtros atuais."}
+                          </p>
+                          {historyDate && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => setHistoryDate('')} 
+                              className="text-xs font-bold border-slate-300 mt-2"
+                            >
+                              Ver Todos os Pedidos ({orders.length} no banco)
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredOrders.map(order => (
                     <TableRow 
                       key={order.id} 
                       className={`hover:bg-slate-50/50 transition-colors ${selectedOrderIds.has(order.id) ? 'bg-blue-50/30' : ''}`}
@@ -666,7 +689,7 @@ export default function AdminView() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )))}
                 </TableBody>
               </Table>
             </div>

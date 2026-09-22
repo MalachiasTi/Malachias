@@ -42,7 +42,7 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
   const { orders, createOrder, updateOrderStatus } = useOrders();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications(currentCity);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const dateInputRef = useRef<HTMLInputElement>(null);
   
   const cityColor = CITY_COLORS[currentCity];
@@ -341,8 +341,24 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
                       <TableBody>
                         {receivedOrders.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-12 text-slate-400 font-medium text-sm">
-                              Nenhum pedido recebido no momento.
+                            <TableCell colSpan={5} className="text-center py-12 px-4 text-slate-500 font-medium text-sm">
+                              <div className="flex flex-col items-center justify-center gap-2">
+                                <p className="text-slate-600 font-semibold">
+                                  {selectedDate 
+                                    ? `Nenhum pedido recebido registrado para a data ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}.`
+                                    : "Nenhum pedido recebido no momento."}
+                                </p>
+                                {selectedDate && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setSelectedDate('')} 
+                                    className="text-xs font-bold border-slate-300 mt-1"
+                                  >
+                                    Ver Todos os Pedidos Recebidos ({orders.filter(o => o.destinationCity === currentCity).length} no banco)
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ) : (
@@ -386,8 +402,24 @@ export default function EstoquistaView({ currentCity, role }: EstoquistaViewProp
                       <TableBody>
                         {sentOrders.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-12 text-slate-400 font-medium text-sm">
-                              Nenhum pedido enviado no momento.
+                            <TableCell colSpan={5} className="text-center py-12 px-4 text-slate-500 font-medium text-sm">
+                              <div className="flex flex-col items-center justify-center gap-2">
+                                <p className="text-slate-600 font-semibold">
+                                  {selectedDate 
+                                    ? `Nenhum pedido enviado registrado para a data ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR')}.`
+                                    : "Nenhum pedido enviado no momento."}
+                                </p>
+                                {selectedDate && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setSelectedDate('')} 
+                                    className="text-xs font-bold border-slate-300 mt-1"
+                                  >
+                                    Ver Todos os Pedidos Enviados ({orders.filter(o => o.originCity === currentCity).length} no banco)
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ) : (

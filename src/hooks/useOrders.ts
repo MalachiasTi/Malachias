@@ -33,6 +33,7 @@ function saveCachedOrders(orders: Order[]) {
 export function useOrders() {
   const [orders, setOrders] = useState<Order[]>(() => loadCachedOrders());
   const [loading, setLoading] = useState(() => loadCachedOrders().length === 0);
+  const [isOnline, setIsOnline] = useState(true);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const warnedQuota = useRef(false);
 
@@ -40,7 +41,7 @@ export function useOrders() {
     let unsubscribe = () => {};
 
     try {
-      const q = query(collection(db, 'orders'), orderBy('updatedAt', 'desc'), limit(150));
+      const q = query(collection(db, 'orders'), orderBy('updatedAt', 'desc'), limit(300));
       unsubscribe = onSnapshot(q, (snapshot) => {
         const ordersData: Order[] = [];
         let hasNewOrder = false;
@@ -60,12 +61,16 @@ export function useOrders() {
           toast.info("Novo pedido recebido!");
         }
 
-        saveCachedOrders(ordersData);
+        if (ordersData.length > 0) {
+          saveCachedOrders(ordersData);
+        }
         setOrders(ordersData);
         setLoading(false);
+        setIsOnline(true);
         setIsFirstLoad(false);
       }, (error: any) => {
         console.warn("Firestore snapshot error (quota or network):", error);
+        setIsOnline(false);
         const cached = loadCachedOrders();
         if (cached.length > 0) {
           setOrders(cached);
@@ -78,6 +83,7 @@ export function useOrders() {
       });
     } catch (err) {
       console.warn("Error setting up onSnapshot:", err);
+      setIsOnline(false);
       const cached = loadCachedOrders();
       if (cached.length > 0) {
         setOrders(cached);
@@ -334,5 +340,5 @@ export function useOrders() {
     }
   };
 
-  return { orders, loading, createOrder, updateOrderStatus, clearDailyOrders, deleteOrder, deleteOrders };
+  return { orders, loading, isOnline, createOrder, updateOrderStatus, clearDailyOrders, deleteOrder, deleteOrders };
 }

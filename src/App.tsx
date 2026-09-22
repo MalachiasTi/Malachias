@@ -243,7 +243,13 @@ export default function App() {
               <div className={`${cityColor?.primary || 'bg-blue-700'} w-8 h-8 rounded-lg flex items-center justify-center`}>
                 <span className="font-black text-lg text-white">M</span>
               </div>
-              <span className="font-bold text-xl text-slate-900 tracking-tight">Malachias AutoPendencias</span>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                <span className="font-bold text-xl text-slate-900 tracking-tight">Malachias AutoPendencias</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Banco Online
+                </span>
+              </div>
             </div>
             
             <div className="flex items-center gap-5">
